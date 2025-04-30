@@ -1,0 +1,63 @@
+#include "UIElement.h"
+
+// Texture atlas ( array textures bad )
+// 1. texture has to be repesented by a y offset and x offset
+// 2. textures have to be stitched together into a big texture sheet ( or I can do it manually? ) 
+// 3. We'd need to keep track of state in a SSBO so that we can still draw everything in 1 call.
+// 4. Sprite manager.
+
+void UIElement::UpdateBuffers()
+{
+    float x = rect.x;
+    float y = rect.y;
+    float width = rect.width;
+    float height = rect.height;
+
+    float v[8];
+
+    // Top right
+    v[0] = x + width; v[1] = y + height;
+    // Bottom right
+    v[2] = x + width; v[3] = y;
+    // Bottom left
+    v[4] = x;         v[5] = y;
+    // Top left
+    v[6] = x;         v[7] = y + height;
+    
+    CheckGLExpression(glNamedBufferSubData(vbo, vertexOffset * sizeof(float), sizeof(v), v));
+}
+
+UIElement::UIElement(float x, float y, float width, float height, size_t vertexOffset, size_t indexOffset, GLbuff vbo, GLbuff ebo): 
+    vertexOffset(vertexOffset), indexOffset(indexOffset)
+{
+    rect = { x, y, width, height };
+
+    shouldUpdate = true;
+
+    this->vbo = vbo;
+    this->ebo = ebo;
+
+    uint32_t baseVertex = static_cast<uint32_t>(vertexOffset / 2); // 2 floats per vertex
+
+    uint32_t indices[6] = {
+        baseVertex + 0, baseVertex + 1, baseVertex + 3,
+        baseVertex + 1, baseVertex + 2, baseVertex + 3
+    };
+    
+    CheckGLExpression(glNamedBufferSubData(ebo, indexOffset * sizeof(uint32_t), sizeof(indices), indices));
+}
+// introduce Z index?
+void UIElement::Relocate(float x, float y, float width, float height)
+{
+    rect = { x, y, width, height };
+
+    shouldUpdate = true;
+}
+
+void UIElement::Update(DWORD64 delta)
+{
+    if (true == shouldUpdate) {
+        UpdateBuffers();
+        shouldUpdate = false;
+    }
+}
