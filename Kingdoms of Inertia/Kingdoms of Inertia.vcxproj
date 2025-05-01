@@ -155,6 +155,7 @@
     <ClCompile Include="glad.c" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="shaders.cpp" />
+    <ClCompile Include="SpriteManager.cpp" />
     <ClCompile Include="Texture2d.cpp" />
     <ClCompile Include="UIElement.cpp" />
     <ClCompile Include="UIManager.cpp" />
@@ -164,6 +165,7 @@
     <ClInclude Include="defines.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="shaders.h" />
+    <ClInclude Include="SpriteManager.h" />
     <ClInclude Include="Texture2d.h" />
     <ClInclude Include="UIElement.h" />
     <ClInclude Include="UIManager.h" />

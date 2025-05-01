@@ -1,0 +1,39 @@
+#pragma once
+#include <vector>
+#include <string>
+#include "defines.h"
+#include "Texture2d.h"
+#include <stb_rect_pack.h>
+#include <stb_image.h>
+struct Sprite {
+	const std::string name;
+	const int offsetX;
+	const int offsetY;
+	const int width;
+	const int height;
+
+	Sprite(std::string name, int offsetX, int offsetY, int width, int height): name(name), offsetX(offsetX), offsetY(offsetY), width(width), height(height){}
+};
+
+struct SpriteInfo {
+	std::string name;
+	int width;
+	int height;
+
+	SpriteInfo(const char* name, int width, int height): name(name), width(width), height(height){}
+};
+
+class SpriteManager
+{
+	Texture2d texture;
+	const std::vector<Sprite> spritesInfo;
+public:
+	SpriteManager(Texture2d texture, std::vector<Sprite>&& spritesInfo);
+	~SpriteManager();
+	const Sprite* GetSprite(char* name);
+};
+
+
+namespace _SpriteManager {
+	SpriteManager LoadSprites(const char* sprfile, const char* spriteDir);
+}

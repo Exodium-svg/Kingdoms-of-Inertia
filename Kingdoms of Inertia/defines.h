@@ -42,3 +42,4 @@ inline const char* const GetGlError(GLenum error) {
 typedef DWORD64 DeltaTimeMS;
 typedef GLint GLhandle;
 typedef GLuint GLbuff;
+typedef unsigned char byte;
