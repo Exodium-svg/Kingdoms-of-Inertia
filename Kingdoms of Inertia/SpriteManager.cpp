@@ -75,7 +75,7 @@ std::vector<SpriteInfo>  ReadSpr(const char* sprfile) {
     return sprites;
 }
 
-void ReadAllSprites(const char* directory, std::vector<SpriteInfo>& sprites, byte* buffer, size_t size) {
+void ReadAllSprites(const char* directory, std::vector<SpriteInfo>& sprites, byte* textureAtlas, size_t size) {
     size_t offset = 0;
     char path[MAX_PATH];
 
@@ -98,30 +98,36 @@ void ReadAllSprites(const char* directory, std::vector<SpriteInfo>& sprites, byt
             CloseHandle(hFile);
             throw std::runtime_error("Failed to read file");
         }
-        char* buffer = (char*)malloc(size);
+        char* buff = (char*)malloc(size);
 
         DWORD bytesRead;
-        if (ReadFile(hFile, buffer, size, &bytesRead, nullptr) != NO_ERROR) {
+        if (ReadFile(hFile, buff, size, &bytesRead, nullptr) != NO_ERROR) {
             CloseHandle(hFile);
-            free(buffer);
+            free(buff);
             throw std::runtime_error("Failed to read file");
         }
 
         if (bytesRead != size) {
             CloseHandle(hFile);
-            free(buffer);
+            free(buff);
             throw std::runtime_error("Failed to read file");
         }
 
-        int width, height, channels;
-        const byte* data = stbi_load_from_memory((stbi_uc*)buffer, size, &width, &height, &channels, STBI_rgb_alpha);
+        int originalWidth, originalHeight, originalChannels;
+        byte* data = stbi_load_from_memory((stbi_uc*)buff, size, &originalWidth, &originalHeight, &originalChannels, STBI_rgb_alpha);
+        size_t resizedSize = sprite.width * sprite.height * 4;
 
-        memcpy_s(buffer + offset, size - offset, data, size);
+        byte* newBuffer = (byte*)malloc(resizedSize);
 
-        offset += size;
+        stbir_resize_uint8(data, originalWidth, originalHeight, 0, newBuffer, sprite.width, sprite.height, NULL, originalChannels);
+        free(data);
 
-        stbi_image_free((void*)data);
-        free(buffer);
+        byte* resizedData = newBuffer;
+        memcpy_s(textureAtlas + offset, resizedSize - offset, resizedData, resizedSize);
+
+        offset += resizedSize;
+        free(resizedData);
+        free(buff);
     }
 }
 
@@ -162,6 +168,8 @@ SpriteManager _SpriteManager::LoadSprites(const char* sprfile, const char* sprit
             atlas_height *= 2;
             atlas_width *= 2;
             nodes_len *= 2;
+
+            buffSize = 0;
             goto TRY_AGAIN;
         }
 
@@ -177,16 +185,15 @@ SpriteManager _SpriteManager::LoadSprites(const char* sprfile, const char* sprit
     Texture2d textureAtlas = Texture2D::CreateTexture(textureBuff, GL_RGBA8, atlas_width, atlas_height, GL_RGBA, GL_UNSIGNED_BYTE);
     free(textureBuff);
 
-    std::vector<Sprite> sprites(spritesLoadInfo.size());
+    std::vector<Sprite> sprites;
+    sprites.reserve(spritesLoadInfo.size());
 
     for (size_t i = 0; i < spritesLoadInfo.size(); i++) {
         const SpriteInfo& spriteInfo = spritesLoadInfo[i];
         const stbrp_rect& rect = rects[i];
 
-        sprites.emplace_back(spriteInfo.name, rect.x, rect.y, rect.w, rect.y);
+        sprites.emplace_back(spriteInfo.name, rect.x, rect.y, rect.w, rect.h);
     }
-
-    // calculate all the UV's of the rectangles for the sprites
 
     return SpriteManager(textureAtlas, std::move(sprites));
 }

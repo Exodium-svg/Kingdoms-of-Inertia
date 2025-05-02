@@ -5,6 +5,7 @@
 #include "Texture2d.h"
 #include <stb_rect_pack.h>
 #include <stb_image.h>
+#include <stb_image_resize.h>
 struct Sprite {
 	const std::string name;
 	const int offsetX;
