@@ -31,6 +31,9 @@ class SpriteManager
 public:
 	SpriteManager(Texture2d texture, std::vector<Sprite>&& spritesInfo);
 	~SpriteManager();
+	void Bind(int textureSlot) {
+		glBindTextureUnit(textureSlot, texture.handle);
+	}
 	const Sprite* GetSprite(char* name);
 };
 

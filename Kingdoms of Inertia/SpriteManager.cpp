@@ -47,7 +47,8 @@ std::vector<SpriteInfo>  ReadSpr(const char* sprfile) {
                 tempBuff[offset++] = ch;
             continue;
         }
-        tempBuff[offset] = '\0';
+        // We zero memory everything so the byte will always end on a NULL byte.
+        //tempBuff[offset] = '\0';
         offset = offset ^ offset;
 
         switch (stage) {
@@ -142,7 +143,7 @@ SpriteManager _SpriteManager::LoadSprites(const char* sprfile, const char* sprit
     int atlas_width = 1024;
     int atlas_height = 1024;
     int nodes_len = 512;
-    stbrp_node* nodes = (stbrp_node*)malloc(nodes_len);
+    stbrp_node* nodes = (stbrp_node*)malloc(nodes_len * sizeof(stbrp_node));
     stbrp_context context;
 
     stbrp_init_target(&context, atlas_width, atlas_height, nodes, sizeof(nodes));
