@@ -28,10 +28,14 @@ class SpriteManager
 {
 	Texture2d texture;
 	const std::vector<Sprite> spritesInfo;
+
 public:
-	SpriteManager(Texture2d texture, std::vector<Sprite>&& spritesInfo);
+	const int width;
+	const int height;
+	SpriteManager(Texture2d texture, std::vector<Sprite>&& spritesInfo, int width, int height);
+
 	~SpriteManager();
-	void Bind(int textureSlot) {
+	inline void Bind(int textureSlot) {
 		glBindTextureUnit(textureSlot, texture.handle);
 	}
 	const Sprite* GetSprite(char* name);
@@ -39,5 +43,5 @@ public:
 
 
 namespace _SpriteManager {
-	SpriteManager LoadSprites(const char* sprfile, const char* spriteDir);
+	SpriteManager* LoadSprites(const char* sprfile, const char* spriteDir);
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <queue>
+#include "SpriteManager.h"
 #include "defines.h"
 #include "UIElement.h"
 
@@ -12,6 +13,7 @@ struct ElementOffset {
 
 class UIManager
 {
+	SpriteManager* spriteManager;
 	GLbuff sharedVbo;
 	GLbuff sharedEbo;
 	GLbuff sharedVao;
@@ -22,6 +24,7 @@ class UIManager
 	int index;
 public:
 	UIManager(int maxElements) {
+		spriteManager = _SpriteManager::LoadSprites("Resource/ui.spr", "Resource/Sprites");
 		index = 0;
 		this->maxElements = maxElements;
 
@@ -41,6 +44,12 @@ public:
 		CheckGLExpression(glVertexArrayAttribFormat(sharedVao, 0, 2, GL_FLOAT, GL_FALSE, 0));
 		CheckGLExpression(glVertexArrayAttribBinding(sharedVao, 0, 0));
 		CheckGLExpression(glVertexArrayVertexBuffer(sharedVao, 0, sharedVbo, 0, sizeof(float) * 2));
+
+		CheckGLExpression(glEnableVertexArrayAttrib(sharedVao, 1));
+		CheckGLExpression(glVertexArrayAttribFormat(sharedVao, 1, 2, GL_FLOAT, GL_FALSE, 0));
+		CheckGLExpression(glVertexArrayAttribBinding(sharedVao, 1, 0));
+		CheckGLExpression(glVertexArrayVertexBuffer(sharedVao, 1, sharedVbo, 0, sizeof(float) * 2));
+
 		CheckGLExpression(glVertexArrayElementBuffer(sharedVao, sharedEbo));
 
 		nextOffset = { 0, 0 };
@@ -55,6 +64,8 @@ public:
 
 		glDeleteBuffers(sizeof(buffs), buffs);
         glDeleteVertexArrays(1, &sharedVao);
+
+		delete spriteManager;
 	}
 	void Update(DWORD64 delta) {
 
@@ -63,6 +74,8 @@ public:
 	}
 
 	void Draw() {
+		// Always bind to the first slot.
+		spriteManager->Bind(0);
 		glBindVertexArray(sharedVao);
 		CheckGLExpression(glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(index * 6), GL_UNSIGNED_INT, 0));
 		glBindVertexArray(0);

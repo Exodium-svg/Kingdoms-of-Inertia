@@ -132,7 +132,7 @@ void ReadAllSprites(const char* directory, std::vector<SpriteInfo>& sprites, byt
     }
 }
 
-SpriteManager _SpriteManager::LoadSprites(const char* sprfile, const char* spriteDir)
+SpriteManager* _SpriteManager::LoadSprites(const char* sprfile, const char* spriteDir)
 {
 	if (!FileExists(sprfile))
 		throw std::runtime_error("Provided sprite sheet does not exist");
@@ -176,7 +176,6 @@ SpriteManager _SpriteManager::LoadSprites(const char* sprfile, const char* sprit
 
         buffSize += (rect.h * rect.w);
     }
-
     buffSize *= 4; // we have 4 bytes per pixel.
 
     byte* textureBuff = (byte*)malloc(buffSize);
@@ -196,10 +195,11 @@ SpriteManager _SpriteManager::LoadSprites(const char* sprfile, const char* sprit
         sprites.emplace_back(spriteInfo.name, rect.x, rect.y, rect.w, rect.h);
     }
 
-    return SpriteManager(textureAtlas, std::move(sprites));
+    return new SpriteManager(textureAtlas, std::move(sprites), atlas_width, atlas_height);
 }
 
-SpriteManager::SpriteManager(Texture2d texture, std::vector<Sprite>&& spritesInfo) : texture(texture), spritesInfo(spritesInfo)
+SpriteManager::SpriteManager(Texture2d texture, std::vector<Sprite>&& spritesInfo, int width, int height) : 
+    texture(texture), spritesInfo(spritesInfo), width(width), height(height)
 {
 }
 
