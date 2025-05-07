@@ -3,7 +3,7 @@
 #include <Windows.h>
 #include <Glad/glad.h>
 #include <stdint.h>
-
+#pragma warning(disable : 4996)
 inline const char* const GetGlError(GLenum error) {
     //DebugBreak();
     switch (error) {

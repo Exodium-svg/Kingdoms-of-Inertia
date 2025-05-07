@@ -1,5 +1,10 @@
 #include "SpriteManager.h"
-
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
+#define STB_RECT_PACK_IMPLEMENTATION
+#include <stb_rect_pack.h>
+#include <stb_image_resize.h>
+#include <stb_image.h>
 
 bool FileExists(const char* path) {
 	DWORD fileFlags = GetFileAttributesA(path);
@@ -18,8 +23,12 @@ std::vector<SpriteInfo>  ReadSpr(const char* sprfile) {
         nullptr
     );
 
+    if (INVALID_HANDLE_VALUE == hFile)
+        throw std::runtime_error("Unable to open file");
+
     DWORD fileSize;
-    if (NO_ERROR != GetFileSize(hFile, &fileSize)) {
+    GetFileSize(hFile, &fileSize);
+    if (INVALID_FILE_SIZE == fileSize) {
         CloseHandle(hFile);
         throw std::runtime_error("Failed to read filesize");
     }
@@ -34,7 +43,7 @@ std::vector<SpriteInfo>  ReadSpr(const char* sprfile) {
     // stages:
     // 1. name;
     // 2. width;
-    // 4. height;
+    // 3. height;
     int stage = 1;
     DWORD readBytes;
 
@@ -43,21 +52,23 @@ std::vector<SpriteInfo>  ReadSpr(const char* sprfile) {
     char ch;
     while (ReadFile(hFile, &ch, 1, &readBytes, nullptr) && readBytes == 1) {
         if (ch != '\n') {
-            if (offset < sizeof(tempBuff) - 1)
+            if (ch == '\r')
+                continue;
+            else if (offset < sizeof(tempBuff) - 1)
                 tempBuff[offset++] = ch;
             continue;
         }
         // We zero memory everything so the byte will always end on a NULL byte.
-        //tempBuff[offset] = '\0';
-        offset = offset ^ offset;
+        tempBuff[offset] = '\0';
+        offset = 0;
 
         switch (stage) {
         case 1: strncpy(name, tempBuff, sizeof(name)); break;
         case 2: strncpy(width, tempBuff, sizeof(width)); break;
-        case 4: strncpy(height, tempBuff, sizeof(height)); break;
+        case 3: strncpy(height, tempBuff, sizeof(height)); break;
         }
 
-        if (stage == 4) {
+        if (stage == 3) {
             char* endPtr;
             int nWidth = strtol(width, &endPtr, 10);
             int nHeight = strtol(height, &endPtr, 10);
@@ -67,70 +78,16 @@ std::vector<SpriteInfo>  ReadSpr(const char* sprfile) {
             ZeroMemory(width, sizeof(width));
             ZeroMemory(height, sizeof(height));
 
-            stage = stage | 0x01;
+            stage = 1;
             continue;
         }
-        stage <<= 1;
+        stage += 1;
     }
     
     return sprites;
 }
 
-void ReadAllSprites(const char* directory, std::vector<SpriteInfo>& sprites, byte* textureAtlas, size_t size) {
-    size_t offset = 0;
-    char path[MAX_PATH];
 
-    for (const SpriteInfo& sprite : sprites) {
-        ZeroMemory(path, sizeof(path));
-        snprintf(path, sizeof(path), "%s/%s", directory, sprite.name.c_str());
-
-        HANDLE hFile = CreateFileA(
-        path,
-        GENERIC_READ,
-        FILE_SHARE_READ,
-        nullptr,
-        OPEN_EXISTING,
-        FILE_ATTRIBUTE_NORMAL,
-        nullptr
-        );
-        DWORD size;
-
-        if (GetFileSize(hFile, &size) != NO_ERROR) {
-            CloseHandle(hFile);
-            throw std::runtime_error("Failed to read file");
-        }
-        char* buff = (char*)malloc(size);
-
-        DWORD bytesRead;
-        if (ReadFile(hFile, buff, size, &bytesRead, nullptr) != NO_ERROR) {
-            CloseHandle(hFile);
-            free(buff);
-            throw std::runtime_error("Failed to read file");
-        }
-
-        if (bytesRead != size) {
-            CloseHandle(hFile);
-            free(buff);
-            throw std::runtime_error("Failed to read file");
-        }
-
-        int originalWidth, originalHeight, originalChannels;
-        byte* data = stbi_load_from_memory((stbi_uc*)buff, size, &originalWidth, &originalHeight, &originalChannels, STBI_rgb_alpha);
-        size_t resizedSize = sprite.width * sprite.height * 4;
-
-        byte* newBuffer = (byte*)malloc(resizedSize);
-
-        stbir_resize_uint8(data, originalWidth, originalHeight, 0, newBuffer, sprite.width, sprite.height, NULL, originalChannels);
-        free(data);
-
-        byte* resizedData = newBuffer;
-        memcpy_s(textureAtlas + offset, resizedSize - offset, resizedData, resizedSize);
-
-        offset += resizedSize;
-        free(resizedData);
-        free(buff);
-    }
-}
 
 SpriteManager* _SpriteManager::LoadSprites(const char* sprfile, const char* spriteDir)
 {
@@ -139,10 +96,11 @@ SpriteManager* _SpriteManager::LoadSprites(const char* sprfile, const char* spri
 
     std::vector<SpriteInfo> spritesLoadInfo = ReadSpr(sprfile);
 
-    TRY_AGAIN:
     int atlas_width = 1024;
     int atlas_height = 1024;
     int nodes_len = 512;
+
+    TRY_AGAIN:
     stbrp_node* nodes = (stbrp_node*)malloc(nodes_len * sizeof(stbrp_node));
     stbrp_context context;
 
@@ -163,7 +121,7 @@ SpriteManager* _SpriteManager::LoadSprites(const char* sprfile, const char* spri
     stbrp_pack_rects(&context, rects.data(), rects.size());
     free(nodes);
 
-    size_t buffSize = 0;
+    size_t buffSize = atlas_width * atlas_height * 4;
     for (const stbrp_rect& rect : rects) {
         if (!rect.was_packed) {
             atlas_height *= 2;
@@ -173,10 +131,8 @@ SpriteManager* _SpriteManager::LoadSprites(const char* sprfile, const char* spri
             buffSize = 0;
             goto TRY_AGAIN;
         }
-
-        buffSize += (rect.h * rect.w);
     }
-    buffSize *= 4; // we have 4 bytes per pixel.
+    
 
     byte* textureBuff = (byte*)malloc(buffSize);
     
@@ -219,4 +175,64 @@ const Sprite* SpriteManager::GetSprite(char* name)
 
     // Maybe have some kind of missing texture texture?
     return nullptr;
+}
+
+void ReadAllSprites(const char* directory, std::vector<SpriteInfo>& sprites, byte* textureAtlas, size_t size)
+{
+    size_t offset = 0;
+    char path[MAX_PATH];
+
+    for (const SpriteInfo& sprite : sprites) {
+        ZeroMemory(path, sizeof(path));
+        snprintf(path, sizeof(path), "%s/%s", directory, sprite.name.c_str());
+
+        HANDLE hFile = CreateFileA(
+            path,
+            GENERIC_READ,
+            FILE_SHARE_READ,
+            nullptr,
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL,
+            nullptr
+        );
+
+        DWORD high;
+        DWORD low = GetFileSize(hFile, &high);
+
+        uint64_t size = ((uint64_t)high << 32) | low;
+
+        if (size == NULL) {
+            CloseHandle(hFile);
+            throw std::runtime_error("Failed to read file");
+        }
+
+        char* buff = (char*)malloc(size);
+
+        DWORD bytesRead;
+        if (ReadFile(hFile, buff, size, &bytesRead, nullptr) == FALSE) {
+            CloseHandle(hFile);
+            free(buff);
+            throw std::runtime_error("Failed to read file");
+        }
+
+        if (bytesRead != size) {
+            CloseHandle(hFile);
+            free(buff);
+            throw std::runtime_error("Failed to read file");
+        }
+
+        int originalWidth, originalHeight, originalChannels;
+        byte* data = stbi_load_from_memory((stbi_uc*)buff, size, &originalWidth, &originalHeight, &originalChannels, STBI_rgb_alpha);
+        size_t resizedSize = sprite.width * sprite.height * 4;
+
+
+        stbir_resize_uint8(data, originalWidth, originalHeight, 0, textureAtlas + offset, sprite.width, sprite.height, NULL, originalChannels);
+        free(data);
+
+
+        offset += resizedSize;
+        free(buff);
+
+        CloseHandle(hFile);
+    }
 }

@@ -3,9 +3,9 @@
 #include <string>
 #include "defines.h"
 #include "Texture2d.h"
-#include <stb_rect_pack.h>
-#include <stb_image.h>
-#include <stb_image_resize.h>
+
+
+
 struct Sprite {
 	const std::string name;
 	const int offsetX;
@@ -41,7 +41,7 @@ public:
 	const Sprite* GetSprite(char* name);
 };
 
-
+static void ReadAllSprites(const char* directory, std::vector<SpriteInfo>& sprites, byte* textureAtlas, size_t size);
 namespace _SpriteManager {
 	SpriteManager* LoadSprites(const char* sprfile, const char* spriteDir);
 }

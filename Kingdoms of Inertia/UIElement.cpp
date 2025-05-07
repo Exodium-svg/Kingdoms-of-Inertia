@@ -13,23 +13,21 @@ void UIElement::UpdateBuffers()
     float width = rect.width;
     float height = rect.height;
 
-    //float v[8];
-    float v[] = {
-    x + width, y + height,    uEnd, vEnd,    // Top right
-    x + width, y,             uEnd, vStart,  // Bottom right
-    x, y,                     uStart, vStart,// Bottom left
-    x, y + height,            uStart, vEnd   // Top left
+    UIVertex vertices[4] = {
+        // Top right
+        { { x + width, y + height }, { uEnd, vEnd } },
+
+        // Bottom right
+        { { x + width, y }, { uEnd, vStart } },
+
+        // Bottom left
+        { { x, y }, { uStart, vStart } },
+
+        // Top left
+        { { x, y + height }, { uStart, vEnd } },
     };
-    //// Top right
-    //v[0] = x + width; v[1] = y + height;
-    //// Bottom right
-    //v[2] = x + width; v[3] = y;
-    //// Bottom left
-    //v[4] = x;         v[5] = y;
-    //// Top left
-    //v[6] = x;         v[7] = y + height;
     
-    CheckGLExpression(glNamedBufferSubData(vbo, vertexOffset * sizeof(float), sizeof(v), v));
+    CheckGLExpression(glNamedBufferSubData(vbo, vertexOffset, sizeof(vertices), vertices));
 }
 
 UIElement::UIElement(float x, float y, float width, float height, size_t vertexOffset, size_t indexOffset, GLbuff vbo, GLbuff ebo): 
@@ -47,7 +45,7 @@ UIElement::UIElement(float x, float y, float width, float height, size_t vertexO
     this->vbo = vbo;
     this->ebo = ebo;
 
-    uint32_t baseVertex = static_cast<uint32_t>(vertexOffset / 2); // 2 floats per vertex
+    uint32_t baseVertex = static_cast<uint32_t>(vertexOffset / sizeof(UIVertex)); // 2 floats per vertex
 
     uint32_t indices[6] = {
         baseVertex + 0, baseVertex + 1, baseVertex + 3,

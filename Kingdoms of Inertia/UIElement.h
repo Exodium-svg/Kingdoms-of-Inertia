@@ -2,6 +2,10 @@
 #include <stdexcept>
 #include "defines.h"
 #include "SpriteManager.h"
+struct UIVertex {
+	float positions[2];
+	float uv[2];
+};
 
 struct Rect {
 	float x;

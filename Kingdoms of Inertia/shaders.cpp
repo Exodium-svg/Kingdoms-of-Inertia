@@ -101,6 +101,20 @@ ShaderProgram Shaders::CreateProgram(const char* pShader)
         throw std::runtime_error("Program linking failed");
     }
 
+    glValidateProgram(nHandle);
+
+    int success;
+    glGetProgramiv(nHandle, GL_VALIDATE_STATUS, &success);
+
+    if (false == success) {
+        char buff[1024];
+
+        glGetProgramInfoLog(nHandle, sizeof(buff), nullptr, buff);
+
+        MessageBoxA(nullptr, buff, "OpenGL invalid program error", MB_OK | MB_ICONERROR);
+
+        throw std::runtime_error(buff);
+    }
     glDetachShader(nHandle, vertShader.nHandle);
     glDetachShader(nHandle, fragShader.nHandle);
     glDeleteShader(vertShader.nHandle);

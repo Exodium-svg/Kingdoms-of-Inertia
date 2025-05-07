@@ -5,7 +5,6 @@
 #include "defines.h"
 #include "UIElement.h"
 
-
 struct ElementOffset {
 	size_t vertexOffset;
 	size_t indexOffset;
@@ -36,19 +35,19 @@ public:
 
 		sharedVbo = buffers[0];
 		sharedEbo = buffers[1];
+		
+		CheckGLExpression(glNamedBufferData(sharedVbo, maxElements * sizeof(UIVertex[4]), nullptr, GL_DYNAMIC_DRAW));
+		CheckGLExpression(glNamedBufferData(sharedEbo, maxElements * sizeof(uint32_t[6]), nullptr, GL_STATIC_DRAW));
 
-		CheckGLExpression(glNamedBufferData(sharedVbo, maxElements * 8 * sizeof(float), nullptr, GL_DYNAMIC_DRAW));
-		CheckGLExpression(glNamedBufferData(sharedEbo, maxElements * 6 * sizeof(uint32_t), nullptr, GL_STATIC_DRAW));
+		CheckGLExpression(glVertexArrayVertexBuffer(sharedVao, 0, sharedVbo, 0, sizeof(UIVertex)));
 
 		CheckGLExpression(glEnableVertexArrayAttrib(sharedVao, 0));
 		CheckGLExpression(glVertexArrayAttribFormat(sharedVao, 0, 2, GL_FLOAT, GL_FALSE, 0));
 		CheckGLExpression(glVertexArrayAttribBinding(sharedVao, 0, 0));
-		CheckGLExpression(glVertexArrayVertexBuffer(sharedVao, 0, sharedVbo, 0, sizeof(float) * 2));
 
 		CheckGLExpression(glEnableVertexArrayAttrib(sharedVao, 1));
 		CheckGLExpression(glVertexArrayAttribFormat(sharedVao, 1, 2, GL_FLOAT, GL_FALSE, 0));
 		CheckGLExpression(glVertexArrayAttribBinding(sharedVao, 1, 0));
-		CheckGLExpression(glVertexArrayVertexBuffer(sharedVao, 1, sharedVbo, 0, sizeof(float) * 2));
 
 		CheckGLExpression(glVertexArrayElementBuffer(sharedVao, sharedEbo));
 
@@ -68,7 +67,6 @@ public:
 		delete spriteManager;
 	}
 	void Update(DWORD64 delta) {
-
 		for (size_t i = 0; i < index; i++) 
 			elements[i]->Update(delta);
 	}
@@ -78,13 +76,13 @@ public:
 		spriteManager->Bind(0);
 		glBindVertexArray(sharedVao);
 		CheckGLExpression(glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(index * 6), GL_UNSIGNED_INT, 0));
-		glBindVertexArray(0);
+		//glBindVertexArray(0);
 	}
 
 	UIElement* AllocateElement(float x, float y, float width, float height) {
 		UIElement* element = new UIElement(x, y, width, height, nextOffset.vertexOffset, nextOffset.indexOffset, sharedVbo, sharedEbo);
 
-		nextOffset.vertexOffset += 8;
+		nextOffset.vertexOffset += sizeof(UIVertex[4]);
 		nextOffset.indexOffset += 6;
 
 		elements[index++] = element;
@@ -117,7 +115,7 @@ public:
 		backElement->indexOffset = offset.indexOffset;
 		backElement->shouldUpdate = true;
 
-		float f[8]{ 0 };
+		float f[16]{ 0 };
 		uint32_t ibo[6]{ 0 };
 
 		CheckGLExpression(glNamedBufferSubData(sharedVbo, backOffset.vertexOffset, sizeof(f), f));

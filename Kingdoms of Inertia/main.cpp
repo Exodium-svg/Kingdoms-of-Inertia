@@ -79,8 +79,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLin
 	ShaderProgram program = Shaders::CreateProgram("basic");
 	
 
-	UIElement* element = manager.AllocateElement(150, 0, 400, 300);
-	UIElement* element2 = manager.AllocateElement(150, 315, 400, 300);
+	UIElement* element = manager.AllocateElement(0, 0, 400, 300);
+	UIElement* element2 = manager.AllocateElement(150, 500, 400, 300);
 
 	while (!glfwWindowShouldClose(pGlfwWindow)) {
 #ifdef NoDebugger
@@ -93,9 +93,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLin
 		const glm::mat4x4& projection = Camera::GetProjection();
 		Shaders::SetUniform(program, 0, false, &projection);
 		DeltaTimeMS deltaTimeMs = (currentTime.QuadPart - lastTime.QuadPart) * 1000 / nFrequency.QuadPart;
-		
 		glClearColor(0.1f, 0.2f, 0.3f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//glCullFace(GL_BACK);
 		glUseProgram(program);
 
 		manager.Update(deltaTimeMs);
