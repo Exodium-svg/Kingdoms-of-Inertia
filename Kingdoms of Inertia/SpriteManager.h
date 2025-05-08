@@ -36,12 +36,31 @@ public:
 
 	~SpriteManager();
 	inline void Bind(int textureSlot) {
+		
+
+		int slot;
+
+		switch (textureSlot) {
+		case 0:
+			slot = GL_TEXTURE0;
+			break;
+		case 1:
+			slot = GL_TEXTURE1;
+			break;
+		case 2:
+			slot = GL_TEXTURE2;
+			break;
+		default:
+			throw std::runtime_error("unknown slot");
+		}
+
+		glActiveTexture(slot);
 		glBindTextureUnit(textureSlot, texture.handle);
 	}
-	const Sprite* GetSprite(char* name);
+	const Sprite* GetSprite(const char* name);
 };
 
-static void ReadAllSprites(const char* directory, std::vector<SpriteInfo>& sprites, byte* textureAtlas, size_t size);
+static void ReadAllSprites(const char* directory, std::vector<SpriteInfo>& sprites, void* rects, byte* textureAtlas, size_t size, size_t atlasWidth, size_t atlasHeight);
 namespace _SpriteManager {
 	SpriteManager* LoadSprites(const char* sprfile, const char* spriteDir);
 }

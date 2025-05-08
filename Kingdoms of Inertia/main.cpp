@@ -82,6 +82,10 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLin
 	UIElement* element = manager.AllocateElement(0, 0, 400, 300);
 	UIElement* element2 = manager.AllocateElement(150, 500, 400, 300);
 
+	manager.SetSprite(element, "test.png");
+	manager.SetSprite(element2, "test.png");
+
+
 	while (!glfwWindowShouldClose(pGlfwWindow)) {
 #ifdef NoDebugger
 		if (IsDebuggerPresent())
@@ -91,7 +95,10 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLin
 		QueryPerformanceCounter(&currentTime);
 		
 		const glm::mat4x4& projection = Camera::GetProjection();
-		Shaders::SetUniform(program, 0, false, &projection);
+		Shaders::SetUniform(program, "projection", false, &projection);
+		Shaders::SetUniform(program, "atlas", 0);
+		// Set texture
+		//Shaders::SetUniform(program, "atlas", 1);
 		DeltaTimeMS deltaTimeMs = (currentTime.QuadPart - lastTime.QuadPart) * 1000 / nFrequency.QuadPart;
 		glClearColor(0.1f, 0.2f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

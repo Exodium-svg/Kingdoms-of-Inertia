@@ -4,7 +4,7 @@
 #include "SpriteManager.h"
 #include "defines.h"
 #include "UIElement.h"
-
+#include <cstddef>
 struct ElementOffset {
 	size_t vertexOffset;
 	size_t indexOffset;
@@ -42,12 +42,12 @@ public:
 		CheckGLExpression(glVertexArrayVertexBuffer(sharedVao, 0, sharedVbo, 0, sizeof(UIVertex)));
 
 		CheckGLExpression(glEnableVertexArrayAttrib(sharedVao, 0));
-		CheckGLExpression(glVertexArrayAttribFormat(sharedVao, 0, 2, GL_FLOAT, GL_FALSE, 0));
+		CheckGLExpression(glVertexArrayAttribFormat(sharedVao, 0, 4, GL_FLOAT, GL_FALSE, 0));
 		CheckGLExpression(glVertexArrayAttribBinding(sharedVao, 0, 0));
 
-		CheckGLExpression(glEnableVertexArrayAttrib(sharedVao, 1));
-		CheckGLExpression(glVertexArrayAttribFormat(sharedVao, 1, 2, GL_FLOAT, GL_FALSE, 0));
-		CheckGLExpression(glVertexArrayAttribBinding(sharedVao, 1, 0));
+		//CheckGLExpression(glEnableVertexArrayAttrib(sharedVao, 1));
+		//CheckGLExpression(glVertexArrayAttribFormat(sharedVao, 1, 2, GL_FLOAT, GL_FALSE, sizeof(UIVertex)));
+		//CheckGLExpression(glVertexArrayAttribBinding(sharedVao, 1, 1));
 
 		CheckGLExpression(glVertexArrayElementBuffer(sharedVao, sharedEbo));
 
@@ -77,6 +77,23 @@ public:
 		glBindVertexArray(sharedVao);
 		CheckGLExpression(glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(index * 6), GL_UNSIGNED_INT, 0));
 		//glBindVertexArray(0);
+	}
+
+	SpriteManager* GetSprites() {
+		return spriteManager;
+	}
+
+	void SetSprite(UIElement* element, const char* spriteName) {
+		const Sprite* sprite = spriteManager->GetSprite(spriteName);
+		if (!sprite) return;
+
+		float uStart = sprite->offsetX / (float)spriteManager->width;
+		float vStart = sprite->offsetY / (float)spriteManager->height;
+		float uEnd = (sprite->offsetX + sprite->width) / (float)spriteManager->width;
+		float vEnd = (sprite->offsetY + sprite->height) / (float)spriteManager->height;
+
+		element->SetUV(uStart, vStart, uEnd, vEnd);
+		//element->SetUV(0.0f, 0.0f, 1.0f, 1.0f);
 	}
 
 	UIElement* AllocateElement(float x, float y, float width, float height) {

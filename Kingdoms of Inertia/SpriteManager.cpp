@@ -136,7 +136,7 @@ SpriteManager* _SpriteManager::LoadSprites(const char* sprfile, const char* spri
 
     byte* textureBuff = (byte*)malloc(buffSize);
     
-    ReadAllSprites("Resource/Sprites", spritesLoadInfo, textureBuff, buffSize);
+    ReadAllSprites("Resource/Sprites", spritesLoadInfo, rects.data(), textureBuff, buffSize, atlas_width, atlas_height);
 
     Texture2d textureAtlas = Texture2D::CreateTexture(textureBuff, GL_RGBA8, atlas_width, atlas_height, GL_RGBA, GL_UNSIGNED_BYTE);
     free(textureBuff);
@@ -164,12 +164,13 @@ SpriteManager::~SpriteManager()
     Texture2D::DeleteTexture(&texture);
 }
 
-const Sprite* SpriteManager::GetSprite(char* name)
+const Sprite* SpriteManager::GetSprite(const char* name)
 {
     for (size_t i = 0; i < spritesInfo.size(); i++) {
         const Sprite& sprite = spritesInfo[i];
 
-        if (sprite.name.compare(name))
+        
+        if (strcmp(sprite.name.c_str(), name) == 0)
             return &sprite;
     }
 
@@ -177,62 +178,83 @@ const Sprite* SpriteManager::GetSprite(char* name)
     return nullptr;
 }
 
-void ReadAllSprites(const char* directory, std::vector<SpriteInfo>& sprites, byte* textureAtlas, size_t size)
+inline void Fill(byte* textureAtlas, const SpriteInfo& sprite, const stbrp_rect* rect, size_t atlasWidth, byte r, byte g, byte b, byte a) {
+    for (size_t y = 0; y < sprite.height; y++) {
+        for (size_t x = 0; x < sprite.width; x++) {
+            size_t atlasIndex = ((rect->y + y) * atlasWidth + (rect->x + x)) * 4;
+
+            textureAtlas[atlasIndex] = r;       // R
+            textureAtlas[atlasIndex + 1] = g;   // G
+            textureAtlas[atlasIndex + 2] = b;   // B
+            textureAtlas[atlasIndex + 3] = a;   // A
+        }
+    }
+}
+
+void ReadAllSprites(const char* directory, std::vector<SpriteInfo>& sprites, void* rects, byte* textureAtlas, size_t size, size_t atlasWidth, size_t atlasHeight)
 {
     size_t offset = 0;
     char path[MAX_PATH];
 
-    for (const SpriteInfo& sprite : sprites) {
-        ZeroMemory(path, sizeof(path));
-        snprintf(path, sizeof(path), "%s/%s", directory, sprite.name.c_str());
+    for (size_t i = 0; i < sprites.size(); i++) {
+        const SpriteInfo& sprite = sprites[i];
+        const stbrp_rect rect = ((stbrp_rect*)rects)[i];
 
-        HANDLE hFile = CreateFileA(
-            path,
-            GENERIC_READ,
-            FILE_SHARE_READ,
-            nullptr,
-            OPEN_EXISTING,
-            FILE_ATTRIBUTE_NORMAL,
-            nullptr
-        );
+        sprintf(path, "%s/%s", directory, sprite.name.c_str());
+
+        HANDLE hFile = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
         DWORD high;
         DWORD low = GetFileSize(hFile, &high);
 
         uint64_t size = ((uint64_t)high << 32) | low;
 
-        if (size == NULL) {
+        if (hFile == INVALID_HANDLE_VALUE || size == INVALID_FILE_SIZE) {
+            Fill(textureAtlas, sprite, &rect, atlasWidth, 255, 255, 255, 255);
             CloseHandle(hFile);
-            throw std::runtime_error("Failed to read file");
+            continue;
         }
 
-        char* buff = (char*)malloc(size);
+        char* fileBuff = new char[size];
 
         DWORD bytesRead;
-        if (ReadFile(hFile, buff, size, &bytesRead, nullptr) == FALSE) {
-            CloseHandle(hFile);
-            free(buff);
-            throw std::runtime_error("Failed to read file");
+
+        const BOOL result = ReadFile(hFile, fileBuff, size, &bytesRead, nullptr);
+        CloseHandle(hFile);
+
+        if (FALSE == result) {
+            Fill(textureAtlas, sprite, &rect, atlasWidth, 255, 255, 255, 255);
+            continue;
         }
 
         if (bytesRead != size) {
-            CloseHandle(hFile);
-            free(buff);
-            throw std::runtime_error("Failed to read file");
+            Fill(textureAtlas, sprite, &rect, atlasWidth, 255, 255, 255, 255);
+            continue;
         }
 
+        stbi_set_flip_vertically_on_load(false);
         int originalWidth, originalHeight, originalChannels;
-        byte* data = stbi_load_from_memory((stbi_uc*)buff, size, &originalWidth, &originalHeight, &originalChannels, STBI_rgb_alpha);
-        size_t resizedSize = sprite.width * sprite.height * 4;
+        stbi_uc* pixelData = stbi_load_from_memory((stbi_uc*)fileBuff, size, &originalWidth, &originalHeight, &originalChannels, STBI_rgb_alpha);
 
+        stbi_uc* resizedPixelData = new stbi_uc[sprite.width * sprite.height * 4];
+        stbir_resize_uint8(pixelData, originalWidth, originalHeight, NULL, resizedPixelData, sprite.width, sprite.height, NULL, STBI_rgb_alpha);
 
-        stbir_resize_uint8(data, originalWidth, originalHeight, 0, textureAtlas + offset, sprite.width, sprite.height, NULL, originalChannels);
-        free(data);
+        // I hate multidimensional arrays.
+        for (size_t y = 0; y < sprite.height; y++) {
+            for (size_t x = 0; x < sprite.width; x++) {
+                size_t atlasIndex = ((rect.y + y) * atlasWidth + (rect.x + x)) * 4;
+                size_t spriteIndex = (y * sprite.width + x) * 4;
 
+                textureAtlas[atlasIndex] = resizedPixelData[spriteIndex];         // R
+                textureAtlas[atlasIndex + 1] = resizedPixelData[spriteIndex + 1]; // G
+                textureAtlas[atlasIndex + 2] = resizedPixelData[spriteIndex + 2]; // B
+                textureAtlas[atlasIndex + 3] = resizedPixelData[spriteIndex + 3]; // A
+            }
+        }
 
-        offset += resizedSize;
-        free(buff);
+        stbi_image_free(pixelData);
+        stbi_image_free(resizedPixelData);
 
-        CloseHandle(hFile);
+        delete[] fileBuff;
     }
 }

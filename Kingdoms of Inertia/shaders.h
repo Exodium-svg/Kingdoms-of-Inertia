@@ -22,5 +22,6 @@ namespace Shaders {
 	Shader CreateShader(GLenum eType, const char* pSource);
 	void DestroyProgram(ShaderProgram program);
 	ShaderProgram CreateProgram(const char* pShader);
-	void SetUniform(ShaderProgram program, int location, bool transpose, const glm::mat4* matrix);
+	void SetUniform(ShaderProgram program, const char* variable, bool transpose, const glm::mat4* matrix);
+	void SetUniform(ShaderProgram program, const char* variable, int value);
 }

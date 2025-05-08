@@ -25,7 +25,7 @@ inline const char* const GetGlError(GLenum error) {
 #endif
 
 #ifdef _DEBUG
-#define CheckGLExpression(expression) { expression; GLenum error = glGetError(); if(GL_NO_ERROR != error) { OutputDebugStringA(GetGlError(error)); throw std::runtime_error(GetGlError(error));} }
+#define CheckGLExpression(expression) { expression; GLenum error = glGetError(); if(GL_NO_ERROR != error) { MessageBoxA(NULL, GetGlError(error), "ERROR", MB_ICONERROR | MB_OK); throw std::runtime_error(GetGlError(error));} }
 #else
 #define CheckGLExpression(expression)
 #endif

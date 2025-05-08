@@ -123,5 +123,12 @@ ShaderProgram Shaders::CreateProgram(const char* pShader)
     return nHandle;
 }
 
-void Shaders::SetUniform(ShaderProgram program, int location, bool transpose, const glm::mat4* matrix) 
-    { CheckGLExpression(glProgramUniformMatrix4fv(program, location, 1, transpose, (const GLfloat*)matrix)); }
+void Shaders::SetUniform(ShaderProgram program, const char* variable, bool transpose, const glm::mat4* matrix) 
+{ 
+    CheckGLExpression(glProgramUniformMatrix4fv(program, glGetUniformLocation(program, variable), 1, transpose, (const GLfloat*)matrix));
+}
+
+void Shaders::SetUniform(ShaderProgram program, const char* variable, int value)
+{ 
+    CheckGLExpression(glProgramUniform1i(program, glGetUniformLocation(program,variable), value)) 
+}
