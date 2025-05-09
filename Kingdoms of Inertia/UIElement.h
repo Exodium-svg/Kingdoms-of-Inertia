@@ -23,6 +23,7 @@ class UIElement
 	
 	void UpdateBuffers();
 	public:
+		size_t zIndex;
 		float uStart;
 		float vStart;
 		float uEnd;
@@ -31,7 +32,7 @@ class UIElement
 		size_t vertexOffset; // in floats
 		size_t indexOffset;  // in indices
 		bool shouldUpdate;
-		UIElement(float x, float y, float width, float height, size_t vertexOffset, size_t indexOffset, GLbuff vbo, GLbuff ebo);
+		UIElement(size_t zIndex, float x, float y, float width, float height, size_t vertexOffset, size_t indexOffset, GLbuff vbo, GLbuff ebo);
 		//TODO: create another constructor with UV support.
 		void SetId(const char* id);
 		void SetUV(float uStart, float vStart, float uEnd, float vEnd);

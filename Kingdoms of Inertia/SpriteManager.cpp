@@ -13,29 +13,31 @@ bool FileExists(const char* path) {
 }
 
 std::vector<SpriteInfo>  ReadSpr(const char* sprfile) {
-    HANDLE hFile = CreateFileA(
+    SmartHandle sHandle(CreateFileA(
         sprfile,
         GENERIC_READ,
         FILE_SHARE_READ,
-        nullptr,          
-        OPEN_EXISTING,   
+        nullptr,
+        OPEN_EXISTING,
         FILE_ATTRIBUTE_NORMAL,
         nullptr
-    );
+    ));
+
+    HANDLE hFile = sHandle.hHandle;
 
     if (INVALID_HANDLE_VALUE == hFile)
         throw std::runtime_error("Unable to open file");
 
     DWORD fileSize;
     GetFileSize(hFile, &fileSize);
-    if (INVALID_FILE_SIZE == fileSize) {
-        CloseHandle(hFile);
+    if (INVALID_FILE_SIZE == fileSize)
         throw std::runtime_error("Failed to read filesize");
-    }
+    
 
-    char name[512];
+    char path[512];
     char width[10];
     char height[10];
+    char alias[512];
 
     char tempBuff[512];
     ZeroMemory(tempBuff, sizeof(tempBuff));
@@ -44,6 +46,7 @@ std::vector<SpriteInfo>  ReadSpr(const char* sprfile) {
     // 1. name;
     // 2. width;
     // 3. height;
+    // 4. alias;
     int stage = 1;
     DWORD readBytes;
 
@@ -63,18 +66,19 @@ std::vector<SpriteInfo>  ReadSpr(const char* sprfile) {
         offset = 0;
 
         switch (stage) {
-        case 1: strncpy(name, tempBuff, sizeof(name)); break;
-        case 2: strncpy(width, tempBuff, sizeof(width)); break;
-        case 3: strncpy(height, tempBuff, sizeof(height)); break;
+        case 1: strncpy(path, tempBuff, sizeof(path));      break;
+        case 2: strncpy(width, tempBuff, sizeof(width));    break;
+        case 3: strncpy(height, tempBuff, sizeof(height));  break;
+        case 4: strncpy(alias, tempBuff, sizeof(alias));    break;
         }
 
-        if (stage == 3) {
+        if (stage == 4) {
             char* endPtr;
             int nWidth = strtol(width, &endPtr, 10);
             int nHeight = strtol(height, &endPtr, 10);
-            sprites.emplace_back(name, nWidth, nHeight);
+            sprites.emplace_back(alias, path, nWidth, nHeight);
 
-            ZeroMemory(name, sizeof(name));
+            ZeroMemory(path, sizeof(path));
             ZeroMemory(width, sizeof(width));
             ZeroMemory(height, sizeof(height));
 
@@ -89,7 +93,7 @@ std::vector<SpriteInfo>  ReadSpr(const char* sprfile) {
 
 
 
-SpriteManager* _SpriteManager::LoadSprites(const char* sprfile, const char* spriteDir)
+std::unique_ptr<SpriteManager> _SpriteManager::LoadSprites(const char* sprfile, const char* spriteDir)
 {
 	if (!FileExists(sprfile))
 		throw std::runtime_error("Provided sprite sheet does not exist");
@@ -100,11 +104,13 @@ SpriteManager* _SpriteManager::LoadSprites(const char* sprfile, const char* spri
     int atlas_height = 1024;
     int nodes_len = 512;
 
-    TRY_AGAIN:
-    stbrp_node* nodes = (stbrp_node*)malloc(nodes_len * sizeof(stbrp_node));
+TRY_AGAIN:
+    size_t nodesSize = nodes_len * sizeof(stbrp_node);
+    std::vector<stbrp_node> nodes;
+    nodes.reserve(nodesSize);
     stbrp_context context;
 
-    stbrp_init_target(&context, atlas_width, atlas_height, nodes, sizeof(nodes));
+    stbrp_init_target(&context, atlas_width, atlas_height, nodes.data(), nodesSize);
 
     
     std::vector<stbrp_rect> rects(spritesLoadInfo.size());
@@ -119,7 +125,6 @@ SpriteManager* _SpriteManager::LoadSprites(const char* sprfile, const char* spri
     }
 
     stbrp_pack_rects(&context, rects.data(), rects.size());
-    free(nodes);
 
     size_t buffSize = atlas_width * atlas_height * 4;
     for (const stbrp_rect& rect : rects) {
@@ -133,13 +138,10 @@ SpriteManager* _SpriteManager::LoadSprites(const char* sprfile, const char* spri
         }
     }
     
+    std::unique_ptr<byte[]> textureBuff = std::make_unique<byte[]>(buffSize);
 
-    byte* textureBuff = (byte*)malloc(buffSize);
-    
-    ReadAllSprites("Resource/Sprites", spritesLoadInfo, rects.data(), textureBuff, buffSize, atlas_width, atlas_height);
-
-    Texture2d textureAtlas = Texture2D::CreateTexture(textureBuff, GL_RGBA8, atlas_width, atlas_height, GL_RGBA, GL_UNSIGNED_BYTE);
-    free(textureBuff);
+    ReadAllSprites("Resource/Sprites", spritesLoadInfo, rects.data(), textureBuff.get(), buffSize, atlas_width, atlas_height);
+    Texture2d textureAtlas = Texture2D::CreateTexture(textureBuff.get(), GL_RGBA8, atlas_width, atlas_height, GL_RGBA, GL_UNSIGNED_BYTE);
 
     std::vector<Sprite> sprites;
     sprites.reserve(spritesLoadInfo.size());
@@ -150,8 +152,8 @@ SpriteManager* _SpriteManager::LoadSprites(const char* sprfile, const char* spri
 
         sprites.emplace_back(spriteInfo.name, rect.x, rect.y, rect.w, rect.h);
     }
-
-    return new SpriteManager(textureAtlas, std::move(sprites), atlas_width, atlas_height);
+    
+    return std::make_unique<SpriteManager>(textureAtlas, std::move(sprites), atlas_width, atlas_height);
 }
 
 SpriteManager::SpriteManager(Texture2d texture, std::vector<Sprite>&& spritesInfo, int width, int height) : 
@@ -200,9 +202,9 @@ void ReadAllSprites(const char* directory, std::vector<SpriteInfo>& sprites, voi
         const SpriteInfo& sprite = sprites[i];
         const stbrp_rect rect = ((stbrp_rect*)rects)[i];
 
-        sprintf(path, "%s/%s", directory, sprite.name.c_str());
-
-        HANDLE hFile = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+        sprintf(path, "%s/%s", directory, sprite.path .c_str());
+        SmartHandle sHandle(CreateFileA(path, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr));
+        HANDLE hFile = sHandle.hHandle;
 
         DWORD high;
         DWORD low = GetFileSize(hFile, &high);
@@ -211,7 +213,6 @@ void ReadAllSprites(const char* directory, std::vector<SpriteInfo>& sprites, voi
 
         if (hFile == INVALID_HANDLE_VALUE || size == INVALID_FILE_SIZE) {
             Fill(textureAtlas, sprite, &rect, atlasWidth, 255, 255, 255, 255);
-            CloseHandle(hFile);
             continue;
         }
 
@@ -220,7 +221,6 @@ void ReadAllSprites(const char* directory, std::vector<SpriteInfo>& sprites, voi
         DWORD bytesRead;
 
         const BOOL result = ReadFile(hFile, fileBuff, size, &bytesRead, nullptr);
-        CloseHandle(hFile);
 
         if (FALSE == result) {
             Fill(textureAtlas, sprite, &rect, atlasWidth, 255, 255, 255, 255);
@@ -253,8 +253,8 @@ void ReadAllSprites(const char* directory, std::vector<SpriteInfo>& sprites, voi
         }
 
         stbi_image_free(pixelData);
-        stbi_image_free(resizedPixelData);
-
+        
+        delete[] resizedPixelData;
         delete[] fileBuff;
     }
 }

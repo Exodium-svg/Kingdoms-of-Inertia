@@ -79,11 +79,11 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLin
 	ShaderProgram program = Shaders::CreateProgram("basic");
 	
 
-	UIElement* element = manager.AllocateElement(0, 0, 400, 300);
-	UIElement* element2 = manager.AllocateElement(150, 500, 400, 300);
+	UIElement* element = manager.AllocateElement(0, 0, 800, 600);
+	UIElement* element2 = manager.AllocateElement(80, 0, 400, 300);
 
-	manager.SetSprite(element, "test.png");
-	manager.SetSprite(element2, "test.png");
+	manager.SetSprite(element, "test");
+	//manager.SetSprite(element2, "test");
 
 
 	while (!glfwWindowShouldClose(pGlfwWindow)) {
@@ -97,8 +97,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLin
 		const glm::mat4x4& projection = Camera::GetProjection();
 		Shaders::SetUniform(program, "projection", false, &projection);
 		Shaders::SetUniform(program, "atlas", 0);
-		// Set texture
-		//Shaders::SetUniform(program, "atlas", 1);
+
 		DeltaTimeMS deltaTimeMs = (currentTime.QuadPart - lastTime.QuadPart) * 1000 / nFrequency.QuadPart;
 		glClearColor(0.1f, 0.2f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

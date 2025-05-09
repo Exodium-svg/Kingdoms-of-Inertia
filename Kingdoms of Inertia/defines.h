@@ -3,7 +3,18 @@
 #include <Windows.h>
 #include <Glad/glad.h>
 #include <stdint.h>
+#include <memory>
 #pragma warning(disable : 4996)
+
+struct SmartHandle {
+    HANDLE hHandle;
+
+    SmartHandle(HANDLE hHandle): hHandle(hHandle) {}
+    ~SmartHandle() { CloseHandle(hHandle); }
+};
+
+
+
 inline const char* const GetGlError(GLenum error) {
     //DebugBreak();
     switch (error) {

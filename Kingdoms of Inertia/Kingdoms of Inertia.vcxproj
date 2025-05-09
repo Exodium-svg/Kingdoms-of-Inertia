@@ -163,6 +163,7 @@
   <ItemGroup>
     <ClInclude Include="camera.h" />
     <ClInclude Include="defines.h" />
+    <ClInclude Include="GLMappedBuffer.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="shaders.h" />
     <ClInclude Include="SpriteManager.h" />

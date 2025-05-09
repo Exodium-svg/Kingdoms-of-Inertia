@@ -17,11 +17,12 @@ struct Sprite {
 };
 
 struct SpriteInfo {
+	std::string path;
 	std::string name;
 	int width;
 	int height;
 
-	SpriteInfo(const char* name, int width, int height): name(name), width(width), height(height){}
+	SpriteInfo(const char* name, const char* path, int width, int height): name(name), path(path), width(width), height(height) {}
 };
 
 class SpriteManager
@@ -62,5 +63,5 @@ public:
 
 static void ReadAllSprites(const char* directory, std::vector<SpriteInfo>& sprites, void* rects, byte* textureAtlas, size_t size, size_t atlasWidth, size_t atlasHeight);
 namespace _SpriteManager {
-	SpriteManager* LoadSprites(const char* sprfile, const char* spriteDir);
+	std::unique_ptr<SpriteManager> LoadSprites(const char* sprfile, const char* spriteDir);
 }

@@ -30,8 +30,8 @@ void UIElement::UpdateBuffers()
     CheckGLExpression(glNamedBufferSubData(vbo, vertexOffset, sizeof(vertices), vertices));
 }
 
-UIElement::UIElement(float x, float y, float width, float height, size_t vertexOffset, size_t indexOffset, GLbuff vbo, GLbuff ebo): 
-    vertexOffset(vertexOffset), indexOffset(indexOffset)
+UIElement::UIElement(size_t zIndex, float x, float y, float width, float height, size_t vertexOffset, size_t indexOffset, GLbuff vbo, GLbuff ebo):
+    vertexOffset(vertexOffset), indexOffset(indexOffset), zIndex(zIndex)
 {
     ZeroMemory(id, sizeof(id));
     uStart = 0;

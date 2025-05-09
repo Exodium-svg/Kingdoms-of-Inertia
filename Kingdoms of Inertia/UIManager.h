@@ -4,7 +4,8 @@
 #include "SpriteManager.h"
 #include "defines.h"
 #include "UIElement.h"
-#include <cstddef>
+#include "GLMappedBuffer.h"
+
 struct ElementOffset {
 	size_t vertexOffset;
 	size_t indexOffset;
@@ -12,18 +13,19 @@ struct ElementOffset {
 
 class UIManager
 {
-	SpriteManager* spriteManager;
+	std::unique_ptr<SpriteManager> spriteManager;
+	std::vector<UIElement*> elements;
+
+	// turn vbo's into custom allocaters for gpu
 	GLbuff sharedVbo;
 	GLbuff sharedEbo;
 	GLbuff sharedVao;
-	std::vector<UIElement*> elements;
-	
+		
 	ElementOffset nextOffset;
 	int maxElements;
 	int index;
 public:
-	UIManager(int maxElements) {
-		spriteManager = _SpriteManager::LoadSprites("Resource/ui.spr", "Resource/Sprites");
+	UIManager(int maxElements): spriteManager(_SpriteManager::LoadSprites("Resource/ui.spr", "Resource/Sprites")) {
 		index = 0;
 		this->maxElements = maxElements;
 
@@ -42,12 +44,12 @@ public:
 		CheckGLExpression(glVertexArrayVertexBuffer(sharedVao, 0, sharedVbo, 0, sizeof(UIVertex)));
 
 		CheckGLExpression(glEnableVertexArrayAttrib(sharedVao, 0));
-		CheckGLExpression(glVertexArrayAttribFormat(sharedVao, 0, 4, GL_FLOAT, GL_FALSE, 0));
+		CheckGLExpression(glVertexArrayAttribFormat(sharedVao, 0, 3, GL_FLOAT, GL_FALSE, 0));
 		CheckGLExpression(glVertexArrayAttribBinding(sharedVao, 0, 0));
 
-		//CheckGLExpression(glEnableVertexArrayAttrib(sharedVao, 1));
-		//CheckGLExpression(glVertexArrayAttribFormat(sharedVao, 1, 2, GL_FLOAT, GL_FALSE, sizeof(UIVertex)));
-		//CheckGLExpression(glVertexArrayAttribBinding(sharedVao, 1, 1));
+		CheckGLExpression(glEnableVertexArrayAttrib(sharedVao, 1));
+		CheckGLExpression(glVertexArrayAttribFormat(sharedVao, 1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2));
+		CheckGLExpression(glVertexArrayAttribBinding(sharedVao, 1, 0));
 
 		CheckGLExpression(glVertexArrayElementBuffer(sharedVao, sharedEbo));
 
@@ -64,7 +66,6 @@ public:
 		glDeleteBuffers(sizeof(buffs), buffs);
         glDeleteVertexArrays(1, &sharedVao);
 
-		delete spriteManager;
 	}
 	void Update(DWORD64 delta) {
 		for (size_t i = 0; i < index; i++) 
@@ -80,7 +81,7 @@ public:
 	}
 
 	SpriteManager* GetSprites() {
-		return spriteManager;
+		return spriteManager.get();
 	}
 
 	void SetSprite(UIElement* element, const char* spriteName) {
@@ -93,11 +94,11 @@ public:
 		float vEnd = (sprite->offsetY + sprite->height) / (float)spriteManager->height;
 
 		element->SetUV(uStart, vStart, uEnd, vEnd);
-		//element->SetUV(0.0f, 0.0f, 1.0f, 1.0f);
 	}
 
 	UIElement* AllocateElement(float x, float y, float width, float height) {
-		UIElement* element = new UIElement(x, y, width, height, nextOffset.vertexOffset, nextOffset.indexOffset, sharedVbo, sharedEbo);
+		size_t zIndex = nextOffset.vertexOffset / sizeof(UIVertex[4]);
+		UIElement* element = new UIElement(zIndex, x, y, width, height, nextOffset.vertexOffset, nextOffset.indexOffset, sharedVbo, sharedEbo);
 
 		nextOffset.vertexOffset += sizeof(UIVertex[4]);
 		nextOffset.indexOffset += 6;
