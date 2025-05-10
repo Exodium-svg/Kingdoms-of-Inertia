@@ -5,11 +5,12 @@ template<typename T>
 class GLMappedBuffer
 {
     GLbuff handle;
-    GLenum bufferType;
+    GLenum usage;
     size_t size;
     T* mappedPtr;
 public:
-    GLMappedBuffer<T>(size_t size, GLenum usage = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT): size(size) {
+    GLMappedBuffer<T>(size_t count, GLenum flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT)
+        : usage(flags), size(count * sizeof(T)) {  // Initialize usage first
         CheckGLExpression(glCreateBuffers(1, &handle));
         CheckGLExpression(glNamedBufferStorage(handle, size, nullptr, usage));
 
@@ -26,6 +27,7 @@ public:
         glDeleteBuffers(1, &handle);
     }
 
+    GLbuff Handle() { return handle; }
     T* Data() { return mappedPtr; }
     const size_t Size() { return size; }
 };

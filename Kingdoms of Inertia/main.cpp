@@ -79,13 +79,13 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLin
 	ShaderProgram program = Shaders::CreateProgram("basic");
 	
 
-	UIElement* element = manager.AllocateElement(0, 0, 800, 600);
-	UIElement* element2 = manager.AllocateElement(80, 0, 400, 300);
+	UIElement * element = manager.AllocateElement(0, 0, 800, 300);
+	UIElement* element2 = manager.AllocateElement(80, 0, 400, 600);
 
-	manager.SetSprite(element, "test");
-	//manager.SetSprite(element2, "test");
+	//manager.SetSprite(element, "test");
+	manager.SetSprite(element2, "test");
 
-
+	int location = 0;
 	while (!glfwWindowShouldClose(pGlfwWindow)) {
 #ifdef NoDebugger
 		if (IsDebuggerPresent())
@@ -94,6 +94,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLin
 		glfwPollEvents();
 		QueryPerformanceCounter(&currentTime);
 		
+		// Move projection to UI manager.
 		const glm::mat4x4& projection = Camera::GetProjection();
 		Shaders::SetUniform(program, "projection", false, &projection);
 		Shaders::SetUniform(program, "atlas", 0);

@@ -239,7 +239,6 @@ void ReadAllSprites(const char* directory, std::vector<SpriteInfo>& sprites, voi
         stbi_uc* resizedPixelData = new stbi_uc[sprite.width * sprite.height * 4];
         stbir_resize_uint8(pixelData, originalWidth, originalHeight, NULL, resizedPixelData, sprite.width, sprite.height, NULL, STBI_rgb_alpha);
 
-        // I hate multidimensional arrays.
         for (size_t y = 0; y < sprite.height; y++) {
             for (size_t x = 0; x < sprite.width; x++) {
                 size_t atlasIndex = ((rect.y + y) * atlasWidth + (rect.x + x)) * 4;
