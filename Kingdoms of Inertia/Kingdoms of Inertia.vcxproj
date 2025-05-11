@@ -151,25 +151,25 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="camera.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="shaders.cpp" />
-    <ClCompile Include="SpriteManager.cpp" />
+    <ClCompile Include="SpriteMap.cpp" />
     <ClCompile Include="Texture2d.cpp" />
-    <ClCompile Include="UIElement.cpp" />
-    <ClCompile Include="UIManager.cpp" />
+    <ClCompile Include="Sprite.cpp" />
+    <ClCompile Include="Renderer2D.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="camera.h" />
     <ClInclude Include="defines.h" />
+    <ClInclude Include="GLBuffer.h" />
     <ClInclude Include="GLMappedBuffer.h" />
+    <ClInclude Include="GLVertexArray.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="shaders.h" />
-    <ClInclude Include="SpriteManager.h" />
+    <ClInclude Include="SpriteMap.h" />
     <ClInclude Include="Texture2d.h" />
-    <ClInclude Include="UIElement.h" />
-    <ClInclude Include="UIManager.h" />
+    <ClInclude Include="Sprite.h" />
+    <ClInclude Include="Renderer2D.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

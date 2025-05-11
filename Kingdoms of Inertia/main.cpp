@@ -1,10 +1,16 @@
 #include "main.h"
 
 //#define NoDebugger
+int gHeight = 0;
+int gWidth = 0;
 
+bool resized = false;
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
-	Camera::Resize(width, height);
+	gWidth = width;
+	gHeight = height;
+
+	resized = true;
 	glViewport(0, 0, width, height);
 }
 
@@ -46,12 +52,16 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLin
 #else
 	char bufTitle[] = "Kingdoms of Inertia";
 #endif
+
+
+	gWidth = 800;
+	gHeight = 600;
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	pGlfwWindow = glfwCreateWindow(800, 600, bufTitle, nullptr, NULL);
-	Camera::Resize(800, 600);
+	pGlfwWindow = glfwCreateWindow(gWidth, 600, bufTitle, nullptr, NULL);
+
 	if (nullptr == pGlfwWindow) {
 		DebugPrint("Failed to create GLFW window");
 		Cleanup(hMutex);
@@ -75,17 +85,20 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLin
 	QueryPerformanceCounter(&currentTime);
 	lastTime = currentTime;
 
-	UIManager manager(1024);
-	ShaderProgram program = Shaders::CreateProgram("basic");
+
+	Renderer2D renderer2D(3024, gWidth, gHeight);
+
+	Sprite* sprite = renderer2D.AllocateSprite(0, 0, 400, 600);
+	Sprite* sprite2 = renderer2D.AllocateSprite(0, 400, 200, 150);
 	
+	renderer2D.SetTexture(sprite, "test");
+	renderer2D.SetTexture(sprite2, "test");
 
-	UIElement * element = manager.AllocateElement(0, 0, 800, 300);
-	UIElement* element2 = manager.AllocateElement(80, 0, 400, 600);
+	sprite->SetZIndex(1);
 
-	//manager.SetSprite(element, "test");
-	manager.SetSprite(element2, "test");
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
 
-	int location = 0;
 	while (!glfwWindowShouldClose(pGlfwWindow)) {
 #ifdef NoDebugger
 		if (IsDebuggerPresent())
@@ -94,19 +107,16 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLin
 		glfwPollEvents();
 		QueryPerformanceCounter(&currentTime);
 		
-		// Move projection to UI manager.
-		const glm::mat4x4& projection = Camera::GetProjection();
-		Shaders::SetUniform(program, "projection", false, &projection);
-		Shaders::SetUniform(program, "atlas", 0);
-
 		DeltaTimeMS deltaTimeMs = (currentTime.QuadPart - lastTime.QuadPart) * 1000 / nFrequency.QuadPart;
-		glClearColor(0.1f, 0.2f, 0.3f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
-		glUseProgram(program);
 
-		manager.Update(deltaTimeMs);
-		manager.Draw();
+		if (resized)
+			renderer2D.Resize(gWidth, gHeight);
+
+		glClearColor(0.1f, 0.2f, 0.3f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
+
+		renderer2D.Update(deltaTimeMs);
+		renderer2D.Draw();
 		
 		glfwSwapBuffers(pGlfwWindow);
 
@@ -119,9 +129,6 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLin
 #endif
 	}
 
-	// do shutdown code
-	
-	Shaders::DestroyProgram(program);
 	glfwDestroyWindow(pGlfwWindow);
 	Cleanup(hMutex);
 	return 0;

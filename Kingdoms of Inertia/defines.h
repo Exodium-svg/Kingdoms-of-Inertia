@@ -4,6 +4,7 @@
 #include <Glad/glad.h>
 #include <stdint.h>
 #include <memory>
+#include <stdexcept>
 #pragma warning(disable : 4996)
 
 struct SmartHandle {

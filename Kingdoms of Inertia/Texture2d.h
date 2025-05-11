@@ -17,6 +17,5 @@ namespace Texture2D {
     /// @param format Format of the pixel data (e.g., GL_RGBA).
     /// @param type Data type of the pixel data (e.g., GL_UNSIGNED_BYTE).
     Texture2d CreateTexture(const byte* imageBytes, GLenum internalFormat, int width, int height, GLenum format = GL_RGBA, GLenum type = GL_UNSIGNED_BYTE);
-
     void DeleteTexture(Texture2d* texture);
 }

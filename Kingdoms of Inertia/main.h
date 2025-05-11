@@ -3,5 +3,4 @@
 #include <Glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "shaders.h"
-#include "camera.h"
-#include "UIManager.h"
+#include "Renderer2D.h"

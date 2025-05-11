@@ -1,4 +1,4 @@
-#include "SpriteManager.h"
+#include "SpriteMap.h"
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #define STB_RECT_PACK_IMPLEMENTATION
@@ -12,7 +12,7 @@ bool FileExists(const char* path) {
 	return (fileFlags != INVALID_FILE_SIZE) && !(fileFlags & FILE_ATTRIBUTE_DIRECTORY);
 }
 
-std::vector<SpriteInfo>  ReadSpr(const char* sprfile) {
+std::vector<SprSpriteInfo>  ReadSpr(const char* sprfile) {
     SmartHandle sHandle(CreateFileA(
         sprfile,
         GENERIC_READ,
@@ -33,7 +33,6 @@ std::vector<SpriteInfo>  ReadSpr(const char* sprfile) {
     if (INVALID_FILE_SIZE == fileSize)
         throw std::runtime_error("Failed to read filesize");
     
-
     char path[512];
     char width[10];
     char height[10];
@@ -50,7 +49,7 @@ std::vector<SpriteInfo>  ReadSpr(const char* sprfile) {
     int stage = 1;
     DWORD readBytes;
 
-    std::vector<SpriteInfo> sprites;
+    std::vector<SprSpriteInfo> sprites;
 
     char ch;
     while (ReadFile(hFile, &ch, 1, &readBytes, nullptr) && readBytes == 1) {
@@ -93,12 +92,12 @@ std::vector<SpriteInfo>  ReadSpr(const char* sprfile) {
 
 
 
-std::unique_ptr<SpriteManager> _SpriteManager::LoadSprites(const char* sprfile, const char* spriteDir)
+std::unique_ptr<Sprites> _SpriteManager::LoadSprites(const char* sprfile, const char* spriteDir)
 {
 	if (!FileExists(sprfile))
 		throw std::runtime_error("Provided sprite sheet does not exist");
 
-    std::vector<SpriteInfo> spritesLoadInfo = ReadSpr(sprfile);
+    std::vector<SprSpriteInfo> spritesLoadInfo = ReadSpr(sprfile);
 
     int atlas_width = 1024;
     int atlas_height = 1024;
@@ -116,7 +115,7 @@ TRY_AGAIN:
     std::vector<stbrp_rect> rects(spritesLoadInfo.size());
 
     for (size_t i = 0; i < spritesLoadInfo.size(); i++) {
-        const SpriteInfo sprite = spritesLoadInfo[i];
+        const SprSpriteInfo sprite = spritesLoadInfo[i];
         stbrp_rect& rect = rects[i];
 
         rect.id = i;
@@ -143,33 +142,33 @@ TRY_AGAIN:
     ReadAllSprites("Resource/Sprites", spritesLoadInfo, rects.data(), textureBuff.get(), buffSize, atlas_width, atlas_height);
     Texture2d textureAtlas = Texture2D::CreateTexture(textureBuff.get(), GL_RGBA8, atlas_width, atlas_height, GL_RGBA, GL_UNSIGNED_BYTE);
 
-    std::vector<Sprite> sprites;
+    std::vector<SpriteLocation> sprites;
     sprites.reserve(spritesLoadInfo.size());
 
     for (size_t i = 0; i < spritesLoadInfo.size(); i++) {
-        const SpriteInfo& spriteInfo = spritesLoadInfo[i];
+        const SprSpriteInfo& spriteInfo = spritesLoadInfo[i];
         const stbrp_rect& rect = rects[i];
 
         sprites.emplace_back(spriteInfo.name, rect.x, rect.y, rect.w, rect.h);
     }
     
-    return std::make_unique<SpriteManager>(textureAtlas, std::move(sprites), atlas_width, atlas_height);
+    return std::make_unique<Sprites>(textureAtlas, std::move(sprites), atlas_width, atlas_height);
 }
 
-SpriteManager::SpriteManager(Texture2d texture, std::vector<Sprite>&& spritesInfo, int width, int height) : 
+Sprites::Sprites(Texture2d texture, std::vector<SpriteLocation>&& spritesInfo, int width, int height) : 
     texture(texture), spritesInfo(spritesInfo), width(width), height(height)
 {
 }
 
-SpriteManager::~SpriteManager()
+Sprites::~Sprites()
 {
     Texture2D::DeleteTexture(&texture);
 }
 
-const Sprite* SpriteManager::GetSprite(const char* name)
+const SpriteLocation* Sprites::GetSprite(const char* name)
 {
     for (size_t i = 0; i < spritesInfo.size(); i++) {
-        const Sprite& sprite = spritesInfo[i];
+        const SpriteLocation& sprite = spritesInfo[i];
 
         
         if (strcmp(sprite.name.c_str(), name) == 0)
@@ -180,7 +179,7 @@ const Sprite* SpriteManager::GetSprite(const char* name)
     return nullptr;
 }
 
-inline void Fill(byte* textureAtlas, const SpriteInfo& sprite, const stbrp_rect* rect, size_t atlasWidth, byte r, byte g, byte b, byte a) {
+inline void Fill(byte* textureAtlas, const SprSpriteInfo& sprite, const stbrp_rect* rect, size_t atlasWidth, byte r, byte g, byte b, byte a) {
     for (size_t y = 0; y < sprite.height; y++) {
         for (size_t x = 0; x < sprite.width; x++) {
             size_t atlasIndex = ((rect->y + y) * atlasWidth + (rect->x + x)) * 4;
@@ -193,13 +192,13 @@ inline void Fill(byte* textureAtlas, const SpriteInfo& sprite, const stbrp_rect*
     }
 }
 
-void ReadAllSprites(const char* directory, std::vector<SpriteInfo>& sprites, void* rects, byte* textureAtlas, size_t size, size_t atlasWidth, size_t atlasHeight)
+void ReadAllSprites(const char* directory, std::vector<SprSpriteInfo>& sprites, void* rects, byte* textureAtlas, size_t size, size_t atlasWidth, size_t atlasHeight)
 {
     size_t offset = 0;
     char path[MAX_PATH];
 
     for (size_t i = 0; i < sprites.size(); i++) {
-        const SpriteInfo& sprite = sprites[i];
+        const SprSpriteInfo& sprite = sprites[i];
         const stbrp_rect rect = ((stbrp_rect*)rects)[i];
 
         sprintf(path, "%s/%s", directory, sprite.path .c_str());
