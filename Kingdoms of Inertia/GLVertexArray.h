@@ -6,7 +6,7 @@ class GLVertexArray
 	int attributes;
 	size_t currentOffset;
 public:
-	GLVertexArray(GLbuff vbo, GLbuff ebo, size_t elementSize): attributes(0) {
+	GLVertexArray(GLbuff vbo, GLbuff ebo, size_t elementSize): attributes(0), currentOffset(0) {
 		CheckGLExpression(glCreateVertexArrays(1, &handle));
 		CheckGLExpression(glVertexArrayElementBuffer(handle, ebo));
 		CheckGLExpression(glVertexArrayVertexBuffer(handle, 0, vbo, 0, elementSize));
@@ -16,8 +16,9 @@ public:
 		glDeleteVertexArrays(1, &handle);
 	}
 
-	void AddAttribute(GLenum type, size_t size, bool normalized) {
+	inline void AddAttribute(GLenum type, size_t size, bool normalized) {
 		int index = attributes++;
+
 		CheckGLExpression(glEnableVertexArrayAttrib(handle, index));
 		CheckGLExpression(glVertexArrayAttribFormat(handle, index, size, type, normalized, currentOffset));
 		CheckGLExpression(glVertexArrayAttribBinding(handle, index, 0)); // assuming buffer bound to binding 0

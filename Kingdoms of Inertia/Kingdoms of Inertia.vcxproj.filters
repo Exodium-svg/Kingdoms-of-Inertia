@@ -13,6 +13,21 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\Graphics">
+      <UniqueIdentifier>{e4a500fb-1096-46fe-abeb-3ed8fb481a42}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Graphics\GLBuffers">
+      <UniqueIdentifier>{f850ae37-3a5f-45f4-b567-076e8fdc9f9d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Graphics\2D">
+      <UniqueIdentifier>{e0ee51e0-0f55-4af9-94e9-c3f7499a7efc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Graphics">
+      <UniqueIdentifier>{d717b483-8dbe-4bdc-ac92-573905cd4521}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Graphics\2D">
+      <UniqueIdentifier>{7d56313f-d521-4315-aecc-42011066417b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -24,17 +39,20 @@
     <ClCompile Include="shaders.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Sprite.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Renderer2D.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Graphics\2D</Filter>
     </ClCompile>
-    <ClCompile Include="Texture2d.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="Sprite.cpp">
+      <Filter>Source Files\Graphics\2D</Filter>
     </ClCompile>
     <ClCompile Include="SpriteMap.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Graphics\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture2d.cpp">
+      <Filter>Source Files\Graphics\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="Text2D.cpp">
+      <Filter>Source Files\Graphics\2D</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -44,29 +62,32 @@
     <ClInclude Include="defines.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Sprite.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer2D.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Texture2d.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SpriteMap.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="GLBuffer.h">
+      <Filter>Header Files\Graphics\GLBuffers</Filter>
     </ClInclude>
     <ClInclude Include="GLMappedBuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GLBuffer.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Graphics\GLBuffers</Filter>
     </ClInclude>
     <ClInclude Include="GLVertexArray.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Graphics\GLBuffers</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer2D.h">
+      <Filter>Header Files\Graphics\2D</Filter>
+    </ClInclude>
+    <ClInclude Include="Sprite.h">
+      <Filter>Header Files\Graphics\2D</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture2d.h">
+      <Filter>Header Files\Graphics\2D</Filter>
+    </ClInclude>
+    <ClInclude Include="SpriteMap.h">
+      <Filter>Header Files\Graphics\2D</Filter>
+    </ClInclude>
+    <ClInclude Include="Text2D.h">
+      <Filter>Header Files\Graphics\2D</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

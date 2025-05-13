@@ -152,6 +152,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="glad.c" />
+    <ClCompile Include="Text2D.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="shaders.cpp" />
     <ClCompile Include="SpriteMap.cpp" />
@@ -164,6 +165,7 @@
     <ClInclude Include="GLBuffer.h" />
     <ClInclude Include="GLMappedBuffer.h" />
     <ClInclude Include="GLVertexArray.h" />
+    <ClInclude Include="Text2D.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="shaders.h" />
     <ClInclude Include="SpriteMap.h" />

@@ -12,7 +12,7 @@ bool FileExists(const char* path) {
 	return (fileFlags != INVALID_FILE_SIZE) && !(fileFlags & FILE_ATTRIBUTE_DIRECTORY);
 }
 
-std::vector<SprSpriteInfo>  ReadSpr(const char* sprfile) {
+std::vector<SprSpriteInfo> ReadSpr(const char* sprfile) {
     SmartHandle sHandle(CreateFileA(
         sprfile,
         GENERIC_READ,
@@ -163,6 +163,28 @@ Sprites::Sprites(Texture2d texture, std::vector<SpriteLocation>&& spritesInfo, i
 Sprites::~Sprites()
 {
     Texture2D::DeleteTexture(&texture);
+}
+
+void Sprites::Bind(int textureSlot)
+{
+    int slot;
+
+    switch (textureSlot) {
+    case 0:
+        slot = GL_TEXTURE0;
+        break;
+    case 1:
+        slot = GL_TEXTURE1;
+        break;
+    case 2:
+        slot = GL_TEXTURE2;
+        break;
+    default:
+        throw std::runtime_error("unknown slot");
+    }
+
+    glActiveTexture(slot);
+    glBindTextureUnit(textureSlot, texture.handle);
 }
 
 const SpriteLocation* Sprites::GetSprite(const char* name)

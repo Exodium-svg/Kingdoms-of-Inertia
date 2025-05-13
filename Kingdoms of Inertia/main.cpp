@@ -99,6 +99,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLin
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
+	//TODO: implement a buffer just for text and add to render step 
+
 	while (!glfwWindowShouldClose(pGlfwWindow)) {
 #ifdef NoDebugger
 		if (IsDebuggerPresent())

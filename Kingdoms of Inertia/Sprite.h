@@ -31,7 +31,7 @@ class Sprite
 	void UpdateVertices();
 public:
 	UIVertex* const mappedPtr;
-		
+	Sprite() = default;
 	Sprite(int zIndex, int x, int y, int width, int height, UIVertex* mappedPtr);
 	Sprite(int x, int y, int zIndex, int width, int height, UIVertex* mappedPtr, UvMap uvMap);
 	

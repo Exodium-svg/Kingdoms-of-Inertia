@@ -35,26 +35,7 @@ public:
 
 	Sprites(Texture2d texture, std::vector<SpriteLocation>&& spritesInfo, int width, int height);
 	~Sprites();
-	inline void Bind(int textureSlot) {
-		int slot;
-
-		switch (textureSlot) {
-		case 0:
-			slot = GL_TEXTURE0;
-			break;
-		case 1:
-			slot = GL_TEXTURE1;
-			break;
-		case 2:
-			slot = GL_TEXTURE2;
-			break;
-		default:
-			throw std::runtime_error("unknown slot");
-		}
-
-		glActiveTexture(slot);
-		glBindTextureUnit(textureSlot, texture.handle);
-	}
+	void Bind(int textureSlot);
 	const SpriteLocation* GetSprite(const char* name);
 };
 
