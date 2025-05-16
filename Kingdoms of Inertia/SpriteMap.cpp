@@ -92,6 +92,7 @@ std::vector<SprSpriteInfo> ReadSpr(const char* sprfile) {
 
 
 
+// TODO: also add truefont types here, considering they are just images
 std::unique_ptr<Sprites> _SpriteManager::LoadSprites(const char* sprfile, const char* spriteDir)
 {
 	if (!FileExists(sprfile))

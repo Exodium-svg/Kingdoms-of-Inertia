@@ -7,6 +7,7 @@ class Text2D {
 	int x, y, z, size;
 	
 	size_t spriteCount;
+	// I hate being cache friendly, I prefer being fucking cringe friendly.
 	Sprite** sprites;
 
 	char* characters;
