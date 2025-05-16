@@ -4,13 +4,13 @@
 #include <queue>
 #include <Glm/glm.hpp>
 #include <Glm/gtc/matrix_transform.hpp>
-#include "SpriteMap.h"
-#include "defines.h"
-#include "Sprite.h"
 #include "GLMappedBuffer.h"
-#include "GLBuffer.h" 
 #include "GLVertexArray.h"
+#include "GLBuffer.h" 
 #include "shaders.h"
+#include "SpriteMap.h"
+#include "Sprite.h"
+#include "Text2D.h"
 
 struct SpriteOffset {
 	size_t vertexOffset;
@@ -39,6 +39,7 @@ public:
 	void Draw();
 	void Resize(int width, int height);
 	void SetTexture(Sprite* sprite, const char* spriteName);
+	Text2D&& CreateText(int x, int y, int z, const char* characters, int size = 16);
 	Sprite* AllocateSprite(float x, float y, float width, float height);
 	void DeallocateSprite(Sprite* sprite);
 };

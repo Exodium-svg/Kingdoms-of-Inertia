@@ -21,7 +21,6 @@ void Cleanup(HANDLE hMutex) {
 	glfwTerminate();
 }
 
-
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nShowCmd) {
 	HANDLE hMutex = CreateMutexA(NULL, FALSE, "KingdomsOfInertia");
 	
@@ -52,7 +51,6 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLin
 #else
 	char bufTitle[] = "Kingdoms of Inertia";
 #endif
-
 
 	gWidth = 800;
 	gHeight = 600;
@@ -85,9 +83,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLin
 	QueryPerformanceCounter(&currentTime);
 	lastTime = currentTime;
 
-
 	Renderer2D renderer2D(3024, gWidth, gHeight);
-
+	
 	Sprite* sprite = renderer2D.AllocateSprite(0, 0, 400, 600);
 	Sprite* sprite2 = renderer2D.AllocateSprite(0, 400, 200, 150);
 	

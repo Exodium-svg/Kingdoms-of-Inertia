@@ -76,6 +76,11 @@ void Renderer2D::SetTexture(Sprite* sprite, const char* spriteName)
 	sprite->SetUV(uStart, vStart, uEnd, vEnd);
 }
 
+Text2D&& Renderer2D::CreateText(int x, int y, int z, const char* characters, int size)
+{
+	return Text2D(characters, x, y, z, this, size);
+}
+
 Sprite* Renderer2D::AllocateSprite(float x, float y, float width, float height)
 {
 	size_t zIndex = nextOffset.vertexOffset / sizeof(UIVertex[4]);
