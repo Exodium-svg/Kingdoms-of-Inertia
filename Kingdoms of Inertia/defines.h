@@ -8,13 +8,23 @@
 #pragma warning(disable : 4996)
 
 struct SmartHandle {
+private:
     HANDLE hHandle;
+public:
+    SmartHandle(HANDLE hHandle): hHandle(hHandle) {
+        if (INVALID_HANDLE_VALUE == hHandle)
+            throw std::runtime_error("Invalid handle");
+    }
+    ~SmartHandle() { if(INVALID_HANDLE_VALUE != hHandle) CloseHandle(hHandle); }
 
-    SmartHandle(HANDLE hHandle): hHandle(hHandle) {}
-    ~SmartHandle() { CloseHandle(hHandle); }
+    operator HANDLE() const { return hHandle; }
+
+    SmartHandle& operator=(const SmartHandle& handle) = delete;
+    SmartHandle& operator=(const SmartHandle&& handle) = delete;
+    SmartHandle(SmartHandle&& handle) noexcept : hHandle(handle.hHandle) {
+        handle.hHandle = INVALID_HANDLE_VALUE;
+    }
 };
-
-
 
 inline const char* const GetGlError(GLenum error) {
     //DebugBreak();

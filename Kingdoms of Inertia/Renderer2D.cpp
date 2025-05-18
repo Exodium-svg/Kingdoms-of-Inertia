@@ -1,7 +1,7 @@
 #include "Renderer2D.h"
 
 Renderer2D::Renderer2D(int maxSprites, int width, int height):
-	spriteMap(_SpriteManager::LoadSprites("Resource/ui.spr", "Resource/Sprites")), sharedVbo(maxSprites),
+	spriteMap(_SpriteManager::LoadSprites("Resource/ui.spr", "Resource/Sprites", "Resource/ubuntu-mono.ttf")), sharedVbo(maxSprites),
 	sharedEbo(maxSprites, GL_STATIC_DRAW), sharedVao(sharedVbo.Handle(), sharedEbo.Handle(), sizeof(UIVertex)),
 	program(Shaders::CreateProgram("basic"))
 {
@@ -68,15 +68,15 @@ void Renderer2D::SetTexture(Sprite* sprite, const char* spriteName)
 	const SpriteLocation* spriteLocation = spriteMap->GetSprite(spriteName);
 	if (!spriteLocation) return;
 
-	float uStart = spriteLocation->offsetX / (float)spriteMap->width;
-	float vStart = spriteLocation->offsetY / (float)spriteMap->height;
-	float uEnd = (spriteLocation->offsetX + spriteLocation->width) / (float)spriteMap->width;
-	float vEnd = (spriteLocation->offsetY + spriteLocation->height) / (float)spriteMap->height;
+	float uStart = (float)spriteLocation->offsetX / (float)spriteMap->width;
+	float vStart = (float)spriteLocation->offsetY / (float)spriteMap->height;
+	float uEnd = ((float)spriteLocation->offsetX + (float)spriteLocation->width) / (float)spriteMap->width;
+	float vEnd = ((float)spriteLocation->offsetY + (float)spriteLocation->height) / (float)spriteMap->height;
 
 	sprite->SetUV(uStart, vStart, uEnd, vEnd);
 }
 
-Text2D&& Renderer2D::CreateText(int x, int y, int z, const char* characters, int size)
+Text2D Renderer2D::CreateText(int x, int y, int z, const char* characters, int size)
 {
 	return Text2D(characters, x, y, z, this, size);
 }

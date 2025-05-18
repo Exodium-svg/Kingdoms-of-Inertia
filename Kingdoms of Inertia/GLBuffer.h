@@ -3,7 +3,7 @@
 template<typename T>
 class GLBuffer
 {
-	const GLbuff handle;
+	GLbuff handle;
 	size_t count;
 	GLenum usage;
 public:

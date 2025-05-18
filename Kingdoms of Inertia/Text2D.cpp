@@ -29,6 +29,12 @@ void Text2D::GetSprites(const char* characters, int size)
 		}
 
 		sprites[spriteIndex] = renderer->AllocateSprite(static_cast<float>(x + offset), static_cast<float>(y + line), static_cast<float>(size), static_cast<float>(size));;
+		char glyphName[25];
+		ZeroMemory(glyphName, sizeof(glyphName));
+
+		sprintf(glyphName, "glyph_%d", characters[i]);
+
+		renderer->SetTexture(sprites[spriteIndex], glyphName);
 
 		offset += size;
 		spriteIndex++;

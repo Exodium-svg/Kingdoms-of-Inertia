@@ -11,6 +11,7 @@
 #include "SpriteMap.h"
 #include "Sprite.h"
 #include "Text2D.h"
+class Text2D;
 
 struct SpriteOffset {
 	size_t vertexOffset;
@@ -20,7 +21,7 @@ struct SpriteOffset {
 class Renderer2D
 {
 	glm::mat4 projection;
-	std::unique_ptr<Sprites> spriteMap;
+	std::unique_ptr<SpriteMap> spriteMap;
 	std::vector<Sprite*> sprites;
 
 	ShaderProgram program;
@@ -39,7 +40,7 @@ public:
 	void Draw();
 	void Resize(int width, int height);
 	void SetTexture(Sprite* sprite, const char* spriteName);
-	Text2D&& CreateText(int x, int y, int z, const char* characters, int size = 16);
+	Text2D CreateText(int x, int y, int z, const char* characters, int size = 16);
 	Sprite* AllocateSprite(float x, float y, float width, float height);
 	void DeallocateSprite(Sprite* sprite);
 };

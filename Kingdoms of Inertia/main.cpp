@@ -85,13 +85,15 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLin
 
 	Renderer2D renderer2D(3024, gWidth, gHeight);
 	
-	Sprite* sprite = renderer2D.AllocateSprite(0, 0, 400, 600);
-	Sprite* sprite2 = renderer2D.AllocateSprite(0, 400, 200, 150);
+	//Sprite* sprite = renderer2D.AllocateSprite(0, 0, 400, 600);
+	//Sprite* sprite2 = renderer2D.AllocateSprite(0, 400, 200, 150);
 	
-	renderer2D.SetTexture(sprite, "test");
-	renderer2D.SetTexture(sprite2, "test");
+	//renderer2D.SetTexture(sprite, "test");
+	//renderer2D.SetTexture(sprite2, "test");
 
-	sprite->SetZIndex(1);
+	Text2D text = renderer2D.CreateText(0, 0, 1, "Hello world", 32);
+
+	//sprite->SetZIndex(1);
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);

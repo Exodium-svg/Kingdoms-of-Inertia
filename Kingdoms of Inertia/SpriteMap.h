@@ -25,7 +25,7 @@ struct SprSpriteInfo {
 	SprSpriteInfo(const char* name, const char* path, int width, int height): name(name), path(path), width(width), height(height) {}
 };
 
-class Sprites
+class SpriteMap
 {
 	Texture2d texture;
 	const std::vector<SpriteLocation> spritesInfo;
@@ -33,13 +33,13 @@ public:
 	const int width;
 	const int height;
 
-	Sprites(Texture2d texture, std::vector<SpriteLocation>&& spritesInfo, int width, int height);
-	~Sprites();
+	SpriteMap(Texture2d texture, std::vector<SpriteLocation>&& spritesInfo, int width, int height);
+	~SpriteMap();
 	void Bind(int textureSlot);
 	const SpriteLocation* GetSprite(const char* name);
 };
 
 static void ReadAllSprites(const char* directory, std::vector<SprSpriteInfo>& sprites, void* rects, byte* textureAtlas, size_t size, size_t atlasWidth, size_t atlasHeight);
 namespace _SpriteManager {
-	std::unique_ptr<Sprites> LoadSprites(const char* sprfile, const char* spriteDir);
+	std::unique_ptr<SpriteMap> LoadSprites(const char* sprfile, const char* spriteDir, const char* fontfile);
 }

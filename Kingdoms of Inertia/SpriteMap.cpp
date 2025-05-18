@@ -1,20 +1,32 @@
 #include "SpriteMap.h"
-#define STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_RESIZE_IMPLEMENTATION
 #define STB_RECT_PACK_IMPLEMENTATION
-#include <stb_rect_pack.h>
-#include <stb_image_resize.h>
-#include <stb_image.h>
+#include "stb_rect_pack.h"
+
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
+#include "stb_image_resize.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
+#define STB_TRUETYPE_IMPLEMENTATION
+#include "stb_truetype.h"
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
 bool FileExists(const char* path) {
-	DWORD fileFlags = GetFileAttributesA(path);
+	const DWORD fileFlags = GetFileAttributesA(path);
 
 	return (fileFlags != INVALID_FILE_SIZE) && !(fileFlags & FILE_ATTRIBUTE_DIRECTORY);
 }
 
-std::vector<SprSpriteInfo> ReadSpr(const char* sprfile) {
-    SmartHandle sHandle(CreateFileA(
-        sprfile,
+std::vector<byte> ReadFont(stbtt_fontinfo& font, const char* filepath) {
+
+    if (FALSE == FileExists(filepath))
+        throw std::runtime_error("Unable to find font file");
+    
+    SmartHandle hFile(CreateFileA(
+        filepath,
         GENERIC_READ,
         FILE_SHARE_READ,
         nullptr,
@@ -23,10 +35,34 @@ std::vector<SprSpriteInfo> ReadSpr(const char* sprfile) {
         nullptr
     ));
 
-    HANDLE hFile = sHandle.hHandle;
+    LARGE_INTEGER size;
+    GetFileSizeEx(hFile, &size);
+    
+    std::vector<byte> buffer(size.LowPart);
 
-    if (INVALID_HANDLE_VALUE == hFile)
-        throw std::runtime_error("Unable to open file");
+    DWORD bytesRead;
+    if (FALSE == ReadFile(hFile, buffer.data(), size.LowPart, &bytesRead, nullptr))
+        throw std::runtime_error("Failed to read file");
+    
+    if(!stbtt_InitFont(&font, buffer.data(), NULL))
+        throw std::runtime_error("Failed to initialize font");
+    
+    return buffer;
+}
+
+std::vector<SprSpriteInfo> ReadSpr(const char* sprfile) {
+    if (!FileExists(sprfile))
+        throw std::runtime_error("Provided sprite sheet does not exist");
+
+    SmartHandle hFile(CreateFileA(
+        sprfile,
+        GENERIC_READ,
+        FILE_SHARE_READ,
+        nullptr,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL,
+        nullptr
+    ));
 
     DWORD fileSize;
     GetFileSize(hFile, &fileSize);
@@ -93,26 +129,57 @@ std::vector<SprSpriteInfo> ReadSpr(const char* sprfile) {
 
 
 // TODO: also add truefont types here, considering they are just images
-std::unique_ptr<Sprites> _SpriteManager::LoadSprites(const char* sprfile, const char* spriteDir)
+std::unique_ptr<SpriteMap> _SpriteManager::LoadSprites(const char* sprfile, const char* spriteDir, const char* fontfile)
 {
-	if (!FileExists(sprfile))
-		throw std::runtime_error("Provided sprite sheet does not exist");
-
     std::vector<SprSpriteInfo> spritesLoadInfo = ReadSpr(sprfile);
 
     int atlas_width = 1024;
     int atlas_height = 1024;
     int nodes_len = 512;
-
 TRY_AGAIN:
+
+    // Load TTF files
+    stbtt_fontinfo font;
+    std::vector<byte> ttf_buffer = ReadFont(font, fontfile);
+
+    constexpr int glyphSize = 128;
+    float scale = stbtt_ScaleForPixelHeight(&font, glyphSize);
+    int width, height, xoffset, yoffset;
+
+
+    for (uint32_t codepoint = 0; codepoint <= 0x10FFFF; codepoint++) {
+        uint32_t glyph_index = stbtt_FindGlyphIndex(&font, codepoint);
+
+        if (NULL == glyph_index)
+            continue;
+
+        byte* bitmap = stbtt_GetCodepointBitmap(&font, 0, scale, codepoint, &width, &height, &xoffset, &yoffset);
+
+        if (nullptr == bitmap)
+            continue;
+
+        char path[25];
+        char glyph[25];
+
+        ZeroMemory(glyph, sizeof(glyph));
+        ZeroMemory(path, sizeof(path));
+
+        sprintf(path, "glyph_%d.png", glyph_index);
+        sprintf(glyph, "glyph_%d", glyph_index);
+
+        spritesLoadInfo.emplace_back(glyph, path, width, height);
+
+        stbi_write_png(path, width, height, 1, bitmap, width);
+        stbtt_FreeBitmap(bitmap, nullptr);
+    }
+
     size_t nodesSize = nodes_len * sizeof(stbrp_node);
-    std::vector<stbrp_node> nodes;
-    nodes.reserve(nodesSize);
+
+    std::vector<stbrp_node> nodes(nodes_len);
+
     stbrp_context context;
+    stbrp_init_target(&context, atlas_width, atlas_height, nodes.data(), nodes_len);
 
-    stbrp_init_target(&context, atlas_width, atlas_height, nodes.data(), nodesSize);
-
-    
     std::vector<stbrp_rect> rects(spritesLoadInfo.size());
 
     for (size_t i = 0; i < spritesLoadInfo.size(); i++) {
@@ -153,20 +220,20 @@ TRY_AGAIN:
         sprites.emplace_back(spriteInfo.name, rect.x, rect.y, rect.w, rect.h);
     }
     
-    return std::make_unique<Sprites>(textureAtlas, std::move(sprites), atlas_width, atlas_height);
+    return std::make_unique<SpriteMap>(textureAtlas, std::move(sprites), atlas_width, atlas_height);
 }
 
-Sprites::Sprites(Texture2d texture, std::vector<SpriteLocation>&& spritesInfo, int width, int height) : 
+SpriteMap::SpriteMap(Texture2d texture, std::vector<SpriteLocation>&& spritesInfo, int width, int height) : 
     texture(texture), spritesInfo(spritesInfo), width(width), height(height)
 {
 }
 
-Sprites::~Sprites()
+SpriteMap::~SpriteMap()
 {
     Texture2D::DeleteTexture(&texture);
 }
 
-void Sprites::Bind(int textureSlot)
+void SpriteMap::Bind(int textureSlot)
 {
     int slot;
 
@@ -188,7 +255,7 @@ void Sprites::Bind(int textureSlot)
     glBindTextureUnit(textureSlot, texture.handle);
 }
 
-const SpriteLocation* Sprites::GetSprite(const char* name)
+const SpriteLocation* SpriteMap::GetSprite(const char* name)
 {
     for (size_t i = 0; i < spritesInfo.size(); i++) {
         const SpriteLocation& sprite = spritesInfo[i];
@@ -225,8 +292,7 @@ void ReadAllSprites(const char* directory, std::vector<SprSpriteInfo>& sprites, 
         const stbrp_rect rect = ((stbrp_rect*)rects)[i];
 
         sprintf(path, "%s/%s", directory, sprite.path .c_str());
-        SmartHandle sHandle(CreateFileA(path, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr));
-        HANDLE hFile = sHandle.hHandle;
+        SmartHandle hFile(CreateFileA(path, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr));
 
         DWORD high;
         DWORD low = GetFileSize(hFile, &high);

@@ -1,5 +1,6 @@
 #pragma once
 #include "Renderer2D.h"
+class Renderer2D;
 
 class Text2D {
 	Renderer2D* renderer;
