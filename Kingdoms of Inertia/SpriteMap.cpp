@@ -136,7 +136,6 @@ std::unique_ptr<SpriteMap> _SpriteManager::LoadSprites(const char* sprfile, cons
     int atlas_width = 1024;
     int atlas_height = 1024;
     int nodes_len = 512;
-TRY_AGAIN:
 
     // Load TTF files
     stbtt_fontinfo font;
@@ -145,7 +144,6 @@ TRY_AGAIN:
     constexpr int glyphSize = 128;
     float scale = stbtt_ScaleForPixelHeight(&font, glyphSize);
     int width, height, xoffset, yoffset;
-
 
     for (uint32_t codepoint = 0; codepoint <= 0x10FFFF; codepoint++) {
         uint32_t glyph_index = stbtt_FindGlyphIndex(&font, codepoint);
@@ -158,8 +156,8 @@ TRY_AGAIN:
         if (nullptr == bitmap)
             continue;
 
-        char path[25];
-        char glyph[25];
+        char path[MAX_PATH];
+        char glyph[MAX_PATH];
 
         ZeroMemory(glyph, sizeof(glyph));
         ZeroMemory(path, sizeof(path));
@@ -169,58 +167,67 @@ TRY_AGAIN:
 
         spritesLoadInfo.emplace_back(glyph, path, width, height);
 
+        sprintf(path, "Resource/Sprites/glyph_%d.png", glyph_index);
         stbi_write_png(path, width, height, 1, bitmap, width);
+
         stbtt_FreeBitmap(bitmap, nullptr);
     }
 
-    size_t nodesSize = nodes_len * sizeof(stbrp_node);
+    while (true) {
+        size_t nodesSize = nodes_len * sizeof(stbrp_node);
 
-    std::vector<stbrp_node> nodes(nodes_len);
+        std::vector<stbrp_node> nodes(nodes_len);
 
-    stbrp_context context;
-    stbrp_init_target(&context, atlas_width, atlas_height, nodes.data(), nodes_len);
+        stbrp_context context;
+        stbrp_init_target(&context, atlas_width, atlas_height, nodes.data(), nodes_len);
 
-    std::vector<stbrp_rect> rects(spritesLoadInfo.size());
+        std::vector<stbrp_rect> rects(spritesLoadInfo.size());
 
-    for (size_t i = 0; i < spritesLoadInfo.size(); i++) {
-        const SprSpriteInfo sprite = spritesLoadInfo[i];
-        stbrp_rect& rect = rects[i];
+        for (size_t i = 0; i < spritesLoadInfo.size(); i++) {
+            const SprSpriteInfo sprite = spritesLoadInfo[i];
+            stbrp_rect& rect = rects[i];
 
-        rect.id = i;
-        rect.w = sprite.width;
-        rect.h = sprite.height;
-    }
-
-    stbrp_pack_rects(&context, rects.data(), rects.size());
-
-    size_t buffSize = atlas_width * atlas_height * 4;
-    for (const stbrp_rect& rect : rects) {
-        if (!rect.was_packed) {
-            atlas_height *= 2;
-            atlas_width *= 2;
-            nodes_len *= 2;
-
-            buffSize = 0;
-            goto TRY_AGAIN;
+            rect.id = i;
+            rect.w = sprite.width;
+            rect.h = sprite.height;
         }
+
+        stbrp_pack_rects(&context, rects.data(), rects.size());
+
+        size_t buffSize = atlas_width * atlas_height * 4;
+
+        bool packed = true;
+        for (const stbrp_rect& rect : rects) {
+            if (!rect.was_packed) {
+                atlas_height *= 2;
+                atlas_width *= 2;
+                nodes_len *= 2;
+
+                packed = false;
+                break;
+            }
+        }
+
+        if (!packed)
+            continue;
+
+        std::unique_ptr<byte[]> textureBuff = std::make_unique<byte[]>(buffSize);
+
+        ReadAllSprites("Resource/Sprites", spritesLoadInfo, rects.data(), textureBuff.get(), buffSize, atlas_width, atlas_height);
+        Texture2d textureAtlas = Texture2D::CreateTexture(textureBuff.get(), GL_RGBA8, atlas_width, atlas_height, GL_RGBA, GL_UNSIGNED_BYTE);
+
+        std::vector<SpriteLocation> sprites;
+        sprites.reserve(spritesLoadInfo.size());
+
+        for (size_t i = 0; i < spritesLoadInfo.size(); i++) {
+            const SprSpriteInfo& spriteInfo = spritesLoadInfo[i];
+            const stbrp_rect& rect = rects[i];
+
+            sprites.emplace_back(spriteInfo.name, rect.x, rect.y, rect.w, rect.h);
+        }
+
+        return std::make_unique<SpriteMap>(textureAtlas, std::move(sprites), atlas_width, atlas_height);
     }
-    
-    std::unique_ptr<byte[]> textureBuff = std::make_unique<byte[]>(buffSize);
-
-    ReadAllSprites("Resource/Sprites", spritesLoadInfo, rects.data(), textureBuff.get(), buffSize, atlas_width, atlas_height);
-    Texture2d textureAtlas = Texture2D::CreateTexture(textureBuff.get(), GL_RGBA8, atlas_width, atlas_height, GL_RGBA, GL_UNSIGNED_BYTE);
-
-    std::vector<SpriteLocation> sprites;
-    sprites.reserve(spritesLoadInfo.size());
-
-    for (size_t i = 0; i < spritesLoadInfo.size(); i++) {
-        const SprSpriteInfo& spriteInfo = spritesLoadInfo[i];
-        const stbrp_rect& rect = rects[i];
-
-        sprites.emplace_back(spriteInfo.name, rect.x, rect.y, rect.w, rect.h);
-    }
-    
-    return std::make_unique<SpriteMap>(textureAtlas, std::move(sprites), atlas_width, atlas_height);
 }
 
 SpriteMap::SpriteMap(Texture2d texture, std::vector<SpriteLocation>&& spritesInfo, int width, int height) : 
@@ -297,35 +304,35 @@ void ReadAllSprites(const char* directory, std::vector<SprSpriteInfo>& sprites, 
         DWORD high;
         DWORD low = GetFileSize(hFile, &high);
 
-        uint64_t size = ((uint64_t)high << 32) | low;
+        uint64_t fileSize = ((uint64_t)high << 32) | low;
 
-        if (hFile == INVALID_HANDLE_VALUE || size == INVALID_FILE_SIZE) {
+        if (hFile == INVALID_HANDLE_VALUE || fileSize == INVALID_FILE_SIZE) {
             Fill(textureAtlas, sprite, &rect, atlasWidth, 255, 255, 255, 255);
             continue;
         }
 
-        char* fileBuff = new char[size];
-
+        std::unique_ptr<char[]> fileBuff = std::make_unique<char[]>(fileSize);
         DWORD bytesRead;
 
-        const BOOL result = ReadFile(hFile, fileBuff, size, &bytesRead, nullptr);
+        const BOOL result = ReadFile(hFile, fileBuff.get(), fileSize, &bytesRead, nullptr);
 
         if (FALSE == result) {
             Fill(textureAtlas, sprite, &rect, atlasWidth, 255, 255, 255, 255);
             continue;
         }
 
-        if (bytesRead != size) {
+        if (bytesRead != fileSize) {
             Fill(textureAtlas, sprite, &rect, atlasWidth, 255, 255, 255, 255);
             continue;
         }
 
         stbi_set_flip_vertically_on_load(false);
         int originalWidth, originalHeight, originalChannels;
-        stbi_uc* pixelData = stbi_load_from_memory((stbi_uc*)fileBuff, size, &originalWidth, &originalHeight, &originalChannels, STBI_rgb_alpha);
+        stbi_uc* pixelData = stbi_load_from_memory((stbi_uc*)fileBuff.get(), fileSize, &originalWidth, &originalHeight, &originalChannels, STBI_rgb_alpha);
 
-        stbi_uc* resizedPixelData = new stbi_uc[sprite.width * sprite.height * 4];
-        stbir_resize_uint8(pixelData, originalWidth, originalHeight, NULL, resizedPixelData, sprite.width, sprite.height, NULL, STBI_rgb_alpha);
+        std::unique_ptr<stbi_uc[]> resizedPixelData = std::make_unique<stbi_uc[]>(sprite.width * sprite.height * 4);
+        
+        stbir_resize_uint8(pixelData, originalWidth, originalHeight, NULL, resizedPixelData.get(), sprite.width, sprite.height, NULL, STBI_rgb_alpha);
 
         for (size_t y = 0; y < sprite.height; y++) {
             for (size_t x = 0; x < sprite.width; x++) {
@@ -340,8 +347,5 @@ void ReadAllSprites(const char* directory, std::vector<SprSpriteInfo>& sprites, 
         }
 
         stbi_image_free(pixelData);
-        
-        delete[] resizedPixelData;
-        delete[] fileBuff;
     }
 }
