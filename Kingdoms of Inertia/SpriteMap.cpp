@@ -132,7 +132,7 @@ std::vector<SprSpriteInfo> ReadSpr(const char* sprfile) {
 std::unique_ptr<SpriteMap> _SpriteManager::LoadSprites(const char* sprfile, const char* spriteDir, const char* fontfile)
 {
     std::vector<SprSpriteInfo> spritesLoadInfo = ReadSpr(sprfile);
-
+    //std::vector<SprSpriteInfo> spritesLoadInfo;
     int atlas_width = 1024;
     int atlas_height = 1024;
     int nodes_len = 512;
@@ -144,17 +144,23 @@ std::unique_ptr<SpriteMap> _SpriteManager::LoadSprites(const char* sprfile, cons
     constexpr int glyphSize = 128;
     float scale = stbtt_ScaleForPixelHeight(&font, glyphSize);
     int width, height, xoffset, yoffset;
+    //0x10FFFF
+    for (uint32_t codepoint = 48; codepoint <= 122; ++codepoint) {
+        if (!(
+            (codepoint >= 48 && codepoint <= 57) ||     // 0-9
+            (codepoint >= 65 && codepoint <= 90) ||     // A-Z
+            (codepoint >= 97 && codepoint <= 122)       // a-z
+            )) {
+            continue; // Skip non-alphanumerics
+        }
 
-    for (uint32_t codepoint = 0; codepoint <= 0x10FFFF; codepoint++) {
         uint32_t glyph_index = stbtt_FindGlyphIndex(&font, codepoint);
-
-        if (NULL == glyph_index)
+        if (glyph_index == 0)
             continue;
 
+        int width, height, xoffset, yoffset;
         byte* bitmap = stbtt_GetCodepointBitmap(&font, 0, scale, codepoint, &width, &height, &xoffset, &yoffset);
-
-        if (nullptr == bitmap)
-            continue;
+        if (!bitmap) continue;
 
         char path[MAX_PATH];
         char glyph[MAX_PATH];
@@ -162,12 +168,13 @@ std::unique_ptr<SpriteMap> _SpriteManager::LoadSprites(const char* sprfile, cons
         ZeroMemory(glyph, sizeof(glyph));
         ZeroMemory(path, sizeof(path));
 
-        sprintf(path, "glyph_%d.png", glyph_index);
-        sprintf(glyph, "glyph_%d", glyph_index);
-
+        sprintf(path, "glyph_%d.png", codepoint);
+        sprintf(glyph, "glyph_%d", codepoint);
+      
+        //spritesLoadInfo.emplace_back(glyph, path, width, height);
         spritesLoadInfo.emplace_back(glyph, path, width, height);
 
-        sprintf(path, "Resource/Sprites/glyph_%d.png", glyph_index);
+        sprintf(path, "Resource/Sprites/glyph_%d.png", codepoint);
         stbi_write_png(path, width, height, 1, bitmap, width);
 
         stbtt_FreeBitmap(bitmap, nullptr);
@@ -223,7 +230,12 @@ std::unique_ptr<SpriteMap> _SpriteManager::LoadSprites(const char* sprfile, cons
             const SprSpriteInfo& spriteInfo = spritesLoadInfo[i];
             const stbrp_rect& rect = rects[i];
 
-            sprites.emplace_back(spriteInfo.name, rect.x, rect.y, rect.w, rect.h);
+            float uStart = rect.x / (float)atlas_width;
+            float vStart = rect.y / (float)atlas_height;
+            float uEnd = (rect.x + rect.w) / (float)atlas_width;
+            float vEnd = (rect.y + rect.h) / (float)atlas_height;
+
+            sprites.emplace_back(spriteInfo.name, uStart, vStart, uEnd, vEnd);
         }
 
         return std::make_unique<SpriteMap>(textureAtlas, std::move(sprites), atlas_width, atlas_height);

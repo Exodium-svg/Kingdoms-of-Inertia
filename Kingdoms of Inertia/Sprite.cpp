@@ -37,6 +37,8 @@ void Sprite::SetUV(float uStart, float vStart, float uEnd, float vEnd)
         vEnd,
         uEnd,
     };
+
+    
     
     shouldUpdate = true;
 }

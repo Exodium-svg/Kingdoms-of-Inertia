@@ -35,6 +35,7 @@ void Text2D::GetSprites(const char* characters, int size)
 		sprintf(glyphName, "glyph_%d", characters[i]);
 
 		renderer->SetTexture(sprites[spriteIndex], glyphName);
+		//renderer->SetTexture(sprites[spriteIndex], "glyph_48");
 
 		offset += size;
 		spriteIndex++;

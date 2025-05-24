@@ -68,18 +68,11 @@ void Renderer2D::SetTexture(Sprite* sprite, const char* spriteName)
 	const SpriteLocation* spriteLocation = spriteMap->GetSprite(spriteName);
 	if (!spriteLocation) return;
 
-	float uStart = (float)spriteLocation->offsetX / (float)spriteMap->width;
-	float vStart = (float)spriteLocation->offsetY / (float)spriteMap->height;
-	float uEnd = ((float)spriteLocation->offsetX + (float)spriteLocation->width) / (float)spriteMap->width;
-	float vEnd = ((float)spriteLocation->offsetY + (float)spriteLocation->height) / (float)spriteMap->height;
-
-	sprite->SetUV(uStart, vStart, uEnd, vEnd);
+	sprite->SetUV(spriteLocation->uStart, spriteLocation->vStart, spriteLocation->uEnd, spriteLocation->vEnd);
 }
 
-Text2D Renderer2D::CreateText(int x, int y, int z, const char* characters, int size)
-{
-	return Text2D(characters, x, y, z, this, size);
-}
+Text2D Renderer2D::CreateText(int x, int y, int z, const char* characters, int size) 
+{ return Text2D(characters, x, y, z, this, size); }
 
 Sprite* Renderer2D::AllocateSprite(float x, float y, float width, float height)
 {

@@ -8,12 +8,12 @@
 
 struct SpriteLocation {
 	const std::string name;
-	const int offsetX;
-	const int offsetY;
-	const int width;
-	const int height;
+	const float uStart;
+	const float vStart;
+	const float uEnd;
+	const float vEnd;
 
-	SpriteLocation(std::string name, int offsetX, int offsetY, int width, int height): name(name), offsetX(offsetX), offsetY(offsetY), width(width), height(height){}
+	SpriteLocation(std::string name, float uStart, float vStart, float uEnd, float vEnd): name(name), uStart(uStart), vStart(vStart), uEnd(uEnd), vEnd(vEnd){}
 };
 
 struct SprSpriteInfo {
